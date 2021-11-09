@@ -803,10 +803,12 @@ func (l *loggingT) infoS(logger *logr.Logger, filter LogFilter, depth int, msg s
 func (l *loggingT) printS(err error, s severity, depth int, msg string, keysAndValues ...interface{}) {
 	// Only create a new buffer if we don't have one cached.
 	b := l.getBuffer()
+	// The message is always quoted, even if it contains line breaks.
+	// If developers want multi-line output, they should use a small, fixed
+	// message and put the multi-line output into a value.
 	b.WriteString(strconv.Quote(msg))
 	if err != nil {
-		b.WriteString(" err=")
-		b.WriteString(strconv.Quote(err.Error()))
+		kvListFormat(&b.Buffer, "err", err)
 	}
 	kvListFormat(&b.Buffer, keysAndValues...)
 	l.printDepth(s, logging.logr, nil, depth+1, &b.Buffer)
@@ -826,6 +828,10 @@ func kvListFormat(b *bytes.Buffer, keysAndValues ...interface{}) {
 			v = missingValue
 		}
 		b.WriteByte(' ')
+		// Keys are assumed to be well-formed according to
+		// https://github.com/kubernetes/community/blob/master/contributors/devel/sig-instrumentation/migration-to-structured-logging.md#name-arguments
+		// for the sake of performance. Keys with spaces,
+		// special characters, etc. will break parsing.
 		if k, ok := k.(string); ok {
 			// Avoid one allocation when the key is a string, which
 			// normally it should be.
@@ -833,7 +839,6 @@ func kvListFormat(b *bytes.Buffer, keysAndValues ...interface{}) {
 		} else {
 			b.WriteString(fmt.Sprintf("%s", k))
 		}
-		b.WriteByte('=')
 
 		// The type checks are sorted so that more frequently used ones
 		// come first because that is then faster in the common
@@ -842,19 +847,77 @@ func kvListFormat(b *bytes.Buffer, keysAndValues ...interface{}) {
 		// (https://github.com/kubernetes/kubernetes/pull/106594#issuecomment-975526235).
 		switch v := v.(type) {
 		case fmt.Stringer:
-			b.WriteString(strconv.Quote(v.String()))
+			writeStringValue(b, true, v.String())
 		case string:
-			b.WriteString(strconv.Quote(v))
+			writeStringValue(b, true, v)
 		case error:
-			b.WriteString(strconv.Quote(v.Error()))
+			writeStringValue(b, true, v.Error())
 		case []byte:
-			// We cannot use the simpler strconv.Quote here
-			// because it does not escape unicode characters, which is
-			// expected by one test!?
+			// In https://github.com/kubernetes/klog/pull/237 it was decided
+			// to format byte slices with "%+q". The advantages of that are:
+			// - readable output if the bytes happen to be printable
+			// - non-printable bytes get represented as unicode escape
+			//   sequences (\uxxxx)
+			//
+			// The downsides are that we cannot use the faster
+			// strconv.Quote here and that multi-line output is not
+			// supported. If developers know that a byte array is
+			// printable and they want multi-line output, they can
+			// convert the value to string before logging it.
+			b.WriteByte('=')
 			b.WriteString(fmt.Sprintf("%+q", v))
 		default:
-			b.WriteString(fmt.Sprintf("%+v", v))
+			writeStringValue(b, false, fmt.Sprintf("%+v", v))
 		}
+	}
+}
+
+func writeStringValue(b *bytes.Buffer, quote bool, v string) {
+	data := []byte(v)
+	index := bytes.IndexByte(data, '\n')
+	if index == -1 {
+		b.WriteByte('=')
+		if quote {
+			// Simple string, quote quotation marks and non-printable characters.
+			b.WriteString(strconv.Quote(v))
+			return
+		}
+		// Non-string with no line breaks.
+		b.WriteString(v)
+		return
+	}
+
+	// Complex multi-line string, show as-is with indention like this:
+	// I... "hello world" key=<
+	// <tab>line 1
+	// <tab>line 2
+	//  >
+	//
+	// Tabs indent the lines of the value while the end of string delimiter
+	// is indented with a space. That has two purposes:
+	// - visual difference between the two for a human reader because indention
+	//   will be different
+	// - no ambiguity when some value line starts with the end delimiter
+	//
+	// One downside is that the output cannot distinguish between strings that
+	// end with a line break and those that don't because the end delimiter
+	// will always be on the next line.
+	b.WriteString("=<\n")
+	for index != -1 {
+		b.WriteByte('\t')
+		b.Write(data[0 : index+1])
+		data = data[index+1:]
+		index = bytes.IndexByte(data, '\n')
+	}
+	if len(data) == 0 {
+		// String ended with line break, don't add another.
+		b.WriteString(" >")
+	} else {
+		// No line break at end of last line, write rest of string and
+		// add one.
+		b.WriteByte('\t')
+		b.Write(data)
+		b.WriteString("\n >")
 	}
 }
 
