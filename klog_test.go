@@ -1844,3 +1844,35 @@ func TestKObjs(t *testing.T) {
 		})
 	}
 }
+
+// Benchmark test for lock with/without defer
+type structWithLock struct {
+	m sync.Mutex
+	n int64
+}
+
+func BenchmarkWithoutDeferUnLock(b *testing.B) {
+	s := structWithLock{}
+	for i := 0; i < b.N; i++ {
+		s.addWithoutDefer()
+	}
+}
+
+func BenchmarkWithDeferUnLock(b *testing.B) {
+	s := structWithLock{}
+	for i := 0; i < b.N; i++ {
+		s.addWithDefer()
+	}
+}
+
+func (s *structWithLock) addWithoutDefer() {
+	s.m.Lock()
+	s.n++
+	s.m.Unlock()
+}
+
+func (s *structWithLock) addWithDefer() {
+	s.m.Lock()
+	defer s.m.Unlock()
+	s.n++
+}
