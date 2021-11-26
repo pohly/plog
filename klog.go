@@ -803,10 +803,10 @@ func (l *loggingT) infoS(logger *logr.Logger, filter LogFilter, depth int, msg s
 func (l *loggingT) printS(err error, s severity, depth int, msg string, keysAndValues ...interface{}) {
 	// Only create a new buffer if we don't have one cached.
 	b := l.getBuffer()
-	b.WriteString(fmt.Sprintf("%q", msg))
+	b.WriteString(strconv.Quote(msg))
 	if err != nil {
-		b.WriteByte(' ')
-		b.WriteString(fmt.Sprintf("err=%q", err.Error()))
+		b.WriteString(" err=")
+		b.WriteString(strconv.Quote(err.Error()))
 	}
 	kvListFormat(&b.Buffer, keysAndValues...)
 	l.printDepth(s, logging.logr, nil, depth+1, &b.Buffer)
@@ -826,18 +826,29 @@ func kvListFormat(b *bytes.Buffer, keysAndValues ...interface{}) {
 			v = missingValue
 		}
 		b.WriteByte(' ')
+		if k, ok := k.(string); ok {
+			// Avoid one allocation when the key is a string, which
+			// normally it should be.
+			b.WriteString(k)
+		} else {
+			b.WriteString(fmt.Sprintf("%s", k))
+		}
+		b.WriteByte('=')
 
-		switch v.(type) {
-		case string, error:
-			b.WriteString(fmt.Sprintf("%s=%q", k, v))
+		switch v := v.(type) {
+		case string:
+			b.WriteString(strconv.Quote(v))
+		case error:
+			b.WriteString(strconv.Quote(v.Error()))
 		case []byte:
-			b.WriteString(fmt.Sprintf("%s=%+q", k, v))
+			// We cannot use the simpler strconv.Quote here
+			// because it does not escape unicode characters, which is
+			// expected by one test!?
+			b.WriteString(fmt.Sprintf("%+q", v))
+		case fmt.Stringer:
+			b.WriteString(strconv.Quote(v.String()))
 		default:
-			if _, ok := v.(fmt.Stringer); ok {
-				b.WriteString(fmt.Sprintf("%s=%q", k, v))
-			} else {
-				b.WriteString(fmt.Sprintf("%s=%+v", k, v))
-			}
+			b.WriteString(fmt.Sprintf("%+v", v))
 		}
 	}
 }
