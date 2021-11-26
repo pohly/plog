@@ -801,14 +801,17 @@ func (l *loggingT) infoS(logger *logr.Logger, filter LogFilter, depth int, msg s
 // printS is called from infoS and errorS if loggr is not specified.
 // set log severity by s
 func (l *loggingT) printS(err error, s severity, depth int, msg string, keysAndValues ...interface{}) {
-	b := &bytes.Buffer{}
+	// Only create a new buffer if we don't have one cached.
+	b := l.getBuffer()
 	b.WriteString(fmt.Sprintf("%q", msg))
 	if err != nil {
 		b.WriteByte(' ')
 		b.WriteString(fmt.Sprintf("err=%q", err.Error()))
 	}
-	kvListFormat(b, keysAndValues...)
-	l.printDepth(s, logging.logr, nil, depth+1, b)
+	kvListFormat(&b.Buffer, keysAndValues...)
+	l.printDepth(s, logging.logr, nil, depth+1, &b.Buffer)
+	// Make the buffer available for reuse.
+	l.putBuffer(b)
 }
 
 const missingValue = "(MISSING)"
