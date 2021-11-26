@@ -835,7 +835,14 @@ func kvListFormat(b *bytes.Buffer, keysAndValues ...interface{}) {
 		}
 		b.WriteByte('=')
 
+		// The type checks are sorted so that more frequently used ones
+		// come first because that is then faster in the common
+		// cases. In Kubernetes, ObjectRef (a Stringer) is more common
+		// than plain strings
+		// (https://github.com/kubernetes/kubernetes/pull/106594#issuecomment-975526235).
 		switch v := v.(type) {
+		case fmt.Stringer:
+			b.WriteString(strconv.Quote(v.String()))
 		case string:
 			b.WriteString(strconv.Quote(v))
 		case error:
@@ -845,8 +852,6 @@ func kvListFormat(b *bytes.Buffer, keysAndValues ...interface{}) {
 			// because it does not escape unicode characters, which is
 			// expected by one test!?
 			b.WriteString(fmt.Sprintf("%+q", v))
-		case fmt.Stringer:
-			b.WriteString(strconv.Quote(v.String()))
 		default:
 			b.WriteString(fmt.Sprintf("%+v", v))
 		}
