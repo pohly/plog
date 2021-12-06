@@ -943,6 +943,12 @@ func TestVInfoS(t *testing.T) {
 		return time.Date(2006, 1, 2, 15, 4, 5, .067890e9, time.Local)
 	}
 	pid = 1234
+	myData := struct {
+		Data string
+	}{
+		Data: `This is some long text
+with a line break.`,
+	}
 	var testDataInfo = []struct {
 		msg        string
 		format     string
@@ -962,6 +968,26 @@ func TestVInfoS(t *testing.T) {
 			msg:        "test",
 			format:     "I0102 15:04:05.067890    1234 klog_test.go:%d] \"test\" err=\"test error\"\n",
 			keysValues: []interface{}{"err", errors.New("test error")},
+		},
+		{
+			msg: `first message line
+second message line`,
+			format: `I0102 15:04:05.067890    1234 klog_test.go:%d] "first message line\nsecond message line" multiLine=<
+	first value line
+	second value line
+ >
+`,
+			keysValues: []interface{}{"multiLine", `first value line
+second value line`},
+		},
+		{
+			msg: `message`,
+			format: `I0102 15:04:05.067890    1234 klog_test.go:%d] "message" myData=<
+	{Data:This is some long text
+	with a line break.}
+ >
+`,
+			keysValues: []interface{}{"myData", myData},
 		},
 	}
 
@@ -987,7 +1013,7 @@ func TestVInfoS(t *testing.T) {
 				want = ""
 			}
 			if contents(infoLog) != want {
-				t.Errorf("V(%d).InfoS has unexpected output: \n got:\t%s\nwant:\t%s", l, contents(infoLog), want)
+				t.Errorf("V(%d).InfoS has unexpected output:\ngot:\n%s\nwant:\n%s\n", l, contents(infoLog), want)
 			}
 		}
 	}
@@ -1031,7 +1057,7 @@ func TestErrorS(t *testing.T) {
 			}
 			want := fmt.Sprintf(e.format, line)
 			if contents(errorLog) != want {
-				t.Errorf("ErrorS has wrong format: \n got:\t%s\nwant:\t%s", contents(errorLog), want)
+				t.Errorf("ErrorS has wrong format:\ngot:\n%s\nwant:\n%s\n", contents(errorLog), want)
 			}
 		}
 	}
@@ -1076,6 +1102,20 @@ func TestKvListFormat(t *testing.T) {
 			want:       " pod=\"kubedns\" bytes=\"\\ufffd\\ufffd=\\ufffd \\u2318\"",
 		},
 		{
+			keysValues: []interface{}{"multiLineString", `Hello world!
+	Starts with tab.
+  Starts with spaces.
+No whitespace.`,
+				"pod", "kubedns",
+			},
+			want: ` multiLineString=<
+	Hello world!
+		Starts with tab.
+	  Starts with spaces.
+	No whitespace.
+ > pod="kubedns"`,
+		},
+		{
 			keysValues: []interface{}{"pod", "kubedns", "maps", map[string]int{"three": 4}},
 			want:       " pod=\"kubedns\" maps=map[three:4]",
 		},
@@ -1113,7 +1153,7 @@ func TestKvListFormat(t *testing.T) {
 		b := &bytes.Buffer{}
 		kvListFormat(b, d.keysValues...)
 		if b.String() != d.want {
-			t.Errorf("kvlist format error:\n got:\n\t%s\nwant:\t%s", b.String(), d.want)
+			t.Errorf("kvlist format error:\ngot:\n%s\nwant:\n%s\n", b.String(), d.want)
 		}
 	}
 }
