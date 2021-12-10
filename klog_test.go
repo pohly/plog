@@ -1107,6 +1107,18 @@ func TestKvListFormat(t *testing.T) {
 			keysValues: []interface{}{"pod", KObj((*kMetadataMock)(nil)), "status", "ready"},
 			want:       " pod=\"\" status=\"ready\"",
 		},
+		{
+			keysValues: []interface{}{"pods", KObjs([]kMetadataMock{
+				{
+					name: "kube-dns",
+					ns:   "kube-system",
+				},
+				{
+					name: "mi-conf",
+				},
+			})},
+			want: " pods=[kube-system/kube-dns mi-conf]",
+		},
 	}
 
 	for _, d := range testKVList {
