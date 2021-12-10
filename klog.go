@@ -999,7 +999,15 @@ func LogToStderr(stderr bool) {
 
 // output writes the data to the log files and releases the buffer.
 func (l *loggingT) output(s severity, log *logr.Logger, buf *buffer, depth int, file string, line int, alsoToStderr bool) {
+	var isLocked = true
 	l.mu.Lock()
+	defer func() {
+		if isLocked {
+			// Unlock before returning in case that it wasn't done already.
+			l.mu.Unlock()
+		}
+	}()
+
 	if l.traceLocation.isSet() {
 		if l.traceLocation.match(file, line) {
 			buf.Write(stacks(false))
@@ -1062,6 +1070,7 @@ func (l *loggingT) output(s severity, log *logr.Logger, buf *buffer, depth int, 
 		// If we got here via Exit rather than Fatal, print no stacks.
 		if atomic.LoadUint32(&fatalNoStacks) > 0 {
 			l.mu.Unlock()
+			isLocked = false
 			timeoutFlush(10 * time.Second)
 			os.Exit(1)
 		}
@@ -1079,11 +1088,12 @@ func (l *loggingT) output(s severity, log *logr.Logger, buf *buffer, depth int, 
 			}
 		}
 		l.mu.Unlock()
+		isLocked = false
 		timeoutFlush(10 * time.Second)
-		os.Exit(255) // C++ uses -1, which is silly because it's anded with 255 anyway.
+		os.Exit(255) // C++ uses -1, which is silly because it's anded(&) with 255 anyway.
 	}
 	l.putBuffer(buf)
-	l.mu.Unlock()
+
 	if stats := severityStats[s]; stats != nil {
 		atomic.AddInt64(&stats.lines, 1)
 		atomic.AddInt64(&stats.bytes, int64(len(data)))
