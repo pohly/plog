@@ -1479,6 +1479,14 @@ func InfoSDepth(depth int, msg string, keysAndValues ...interface{}) {
 	logging.infoS(logging.logr, logging.filter, depth, msg, keysAndValues...)
 }
 
+// InfoSDepth is equivalent to the global InfoSDepth function, guarded by the value of v.
+// See the documentation of V for usage.
+func (v Verbose) InfoSDepth(depth int, msg string, keysAndValues ...interface{}) {
+	if v.enabled {
+		logging.infoS(v.logr, v.filter, depth, msg, keysAndValues...)
+	}
+}
+
 // Deprecated: Use ErrorS instead.
 func (v Verbose) Error(err error, msg string, args ...interface{}) {
 	if v.enabled {
