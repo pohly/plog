@@ -1063,8 +1063,20 @@ func TestErrorS(t *testing.T) {
 	}
 }
 
+// point conforms to fmt.Stringer interface as it implements the String() method
+type point struct {
+	x int
+	y int
+}
+
+// we now have a value receiver
+func (p point) String() string {
+	return fmt.Sprintf("x=%d, y=%d", p.x, p.y)
+}
+
 // Test that kvListFormat works as advertised.
 func TestKvListFormat(t *testing.T) {
+	var emptyPoint *point
 	var testKVList = []struct {
 		keysValues []interface{}
 		want       string
@@ -1158,6 +1170,10 @@ No whitespace.`,
 				},
 			})},
 			want: " pods=[kube-system/kube-dns mi-conf]",
+		},
+		{
+			keysValues: []interface{}{"point-1", point{100, 200}, "point-2", emptyPoint},
+			want:       " point-1=\"x=100, y=200\" point-2=\"nil\"",
 		},
 	}
 
