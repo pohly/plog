@@ -1416,6 +1416,42 @@ func TestLogFilter(t *testing.T) {
 	}
 }
 
+func TestInfoWithLogr(t *testing.T) {
+	logger := new(testLogr)
+
+	testDataInfo := []struct {
+		msg      string
+		expected testLogrEntry
+	}{{
+		msg: "foo",
+		expected: testLogrEntry{
+			severity: infoLog,
+			msg:      "foo\n",
+		},
+	}, {
+		msg: "",
+		expected: testLogrEntry{
+			severity: infoLog,
+			msg:      "\n",
+		},
+	}}
+
+	for _, data := range testDataInfo {
+		t.Run(data.msg, func(t *testing.T) {
+			l := logr.New(logger)
+			SetLogger(l)
+			defer ClearLogger()
+			defer logger.reset()
+
+			Info(data.msg)
+
+			if !reflect.DeepEqual(logger.entries, []testLogrEntry{data.expected}) {
+				t.Errorf("expected: %+v; but got: %+v", []testLogrEntry{data.expected}, logger.entries)
+			}
+		})
+	}
+}
+
 func TestInfoSWithLogr(t *testing.T) {
 	logger := new(testLogr)
 
