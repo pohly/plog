@@ -729,7 +729,7 @@ func (l *loggingT) printDepth(s severity, logger *logr.Logger, filter LogFilter,
 		args = filter.Filter(args)
 	}
 	fmt.Fprint(buf, args...)
-	if buf.Bytes()[buf.Len()-1] != '\n' {
+	if buf.Len() == 0 || buf.Bytes()[buf.Len()-1] != '\n' {
 		buf.WriteByte('\n')
 	}
 	l.output(s, logger, buf, depth, file, line, false)
