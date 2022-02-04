@@ -699,7 +699,11 @@ func (buf *buffer) someDigits(i, d int) int {
 }
 
 func (l *loggingT) println(s severity, logger *logr.Logger, filter LogFilter, args ...interface{}) {
-	buf, file, line := l.header(s, 0)
+	l.printlnDepth(s, logger, filter, 1, args...)
+}
+
+func (l *loggingT) printlnDepth(s severity, logger *logr.Logger, filter LogFilter, depth int, args ...interface{}) {
+	buf, file, line := l.header(s, depth)
 	// if logger is set, we clear the generated header as we rely on the backing
 	// logger implementation to print headers
 	if logger != nil {
@@ -736,7 +740,11 @@ func (l *loggingT) printDepth(s severity, logger *logr.Logger, filter LogFilter,
 }
 
 func (l *loggingT) printf(s severity, logger *logr.Logger, filter LogFilter, format string, args ...interface{}) {
-	buf, file, line := l.header(s, 0)
+	l.printfDepth(s, logger, filter, 1, format, args...)
+}
+
+func (l *loggingT) printfDepth(s severity, logger *logr.Logger, filter LogFilter, depth int, format string, args ...interface{}) {
+	buf, file, line := l.header(s, depth)
 	// if logr is set, we clear the generated header as we rely on the backing
 	// logr implementation to print headers
 	if logger != nil {
@@ -1459,6 +1467,14 @@ func (v Verbose) Info(args ...interface{}) {
 	}
 }
 
+// InfoDepth is equivalent to the global InfoDepth function, guarded by the value of v.
+// See the documentation of V for usage.
+func (v Verbose) InfoDepth(depth int, args ...interface{}) {
+	if v.enabled {
+		logging.printDepth(infoLog, v.logr, v.filter, depth, args...)
+	}
+}
+
 // Infoln is equivalent to the global Infoln function, guarded by the value of v.
 // See the documentation of V for usage.
 func (v Verbose) Infoln(args ...interface{}) {
@@ -1467,11 +1483,27 @@ func (v Verbose) Infoln(args ...interface{}) {
 	}
 }
 
+// InfolnDepth is equivalent to the global InfolnDepth function, guarded by the value of v.
+// See the documentation of V for usage.
+func (v Verbose) InfolnDepth(depth int, args ...interface{}) {
+	if v.enabled {
+		logging.printlnDepth(infoLog, v.logr, v.filter, depth, args...)
+	}
+}
+
 // Infof is equivalent to the global Infof function, guarded by the value of v.
 // See the documentation of V for usage.
 func (v Verbose) Infof(format string, args ...interface{}) {
 	if v.enabled {
 		logging.printf(infoLog, v.logr, v.filter, format, args...)
+	}
+}
+
+// InfofDepth is equivalent to the global InfofDepth function, guarded by the value of v.
+// See the documentation of V for usage.
+func (v Verbose) InfofDepth(depth int, format string, args ...interface{}) {
+	if v.enabled {
+		logging.printfDepth(infoLog, v.logr, v.filter, depth, format, args...)
 	}
 }
 
@@ -1530,10 +1562,22 @@ func Infoln(args ...interface{}) {
 	logging.println(infoLog, logging.logr, logging.filter, args...)
 }
 
+// InfolnDepth acts as Infoln but uses depth to determine which call frame to log.
+// InfolnDepth(0, "msg") is the same as Infoln("msg").
+func InfolnDepth(depth int, args ...interface{}) {
+	logging.printlnDepth(infoLog, logging.logr, logging.filter, depth, args...)
+}
+
 // Infof logs to the INFO log.
 // Arguments are handled in the manner of fmt.Printf; a newline is appended if missing.
 func Infof(format string, args ...interface{}) {
 	logging.printf(infoLog, logging.logr, logging.filter, format, args...)
+}
+
+// InfofDepth acts as Infof but uses depth to determine which call frame to log.
+// InfofDepth(0, "msg", args...) is the same as Infof("msg", args...).
+func InfofDepth(depth int, format string, args ...interface{}) {
+	logging.printfDepth(infoLog, logging.logr, logging.filter, depth, format, args...)
 }
 
 // InfoS structured logs to the INFO log.
@@ -1566,10 +1610,22 @@ func Warningln(args ...interface{}) {
 	logging.println(warningLog, logging.logr, logging.filter, args...)
 }
 
+// WarninglnDepth acts as Warningln but uses depth to determine which call frame to log.
+// WarninglnDepth(0, "msg") is the same as Warningln("msg").
+func WarninglnDepth(depth int, args ...interface{}) {
+	logging.printDepth(warningLog, logging.logr, logging.filter, depth, args...)
+}
+
 // Warningf logs to the WARNING and INFO logs.
 // Arguments are handled in the manner of fmt.Printf; a newline is appended if missing.
 func Warningf(format string, args ...interface{}) {
 	logging.printf(warningLog, logging.logr, logging.filter, format, args...)
+}
+
+// WarningfDepth acts as Warningf but uses depth to determine which call frame to log.
+// WarningfDepth(0, "msg", args...) is the same as Warningf("msg", args...).
+func WarningfDepth(depth int, format string, args ...interface{}) {
+	logging.printfDepth(warningLog, logging.logr, logging.filter, depth, format, args...)
 }
 
 // Error logs to the ERROR, WARNING, and INFO logs.
@@ -1590,10 +1646,22 @@ func Errorln(args ...interface{}) {
 	logging.println(errorLog, logging.logr, logging.filter, args...)
 }
 
+// ErrorlnDepth acts as Errorln but uses depth to determine which call frame to log.
+// ErrorlnDepth(0, "msg") is the same as Errorln("msg").
+func ErrorlnDepth(depth int, args ...interface{}) {
+	logging.printDepth(errorLog, logging.logr, logging.filter, depth, args...)
+}
+
 // Errorf logs to the ERROR, WARNING, and INFO logs.
 // Arguments are handled in the manner of fmt.Printf; a newline is appended if missing.
 func Errorf(format string, args ...interface{}) {
 	logging.printf(errorLog, logging.logr, logging.filter, format, args...)
+}
+
+// ErrorfDepth acts as Errorf but uses depth to determine which call frame to log.
+// ErrorfDepth(0, "msg", args...) is the same as Errorf("msg", args...).
+func ErrorfDepth(depth int, format string, args ...interface{}) {
+	logging.printfDepth(errorLog, logging.logr, logging.filter, depth, format, args...)
 }
 
 // ErrorS structured logs to the ERROR, WARNING, and INFO logs.
@@ -1635,11 +1703,23 @@ func Fatalln(args ...interface{}) {
 	logging.println(fatalLog, logging.logr, logging.filter, args...)
 }
 
+// FatallnDepth acts as Fatalln but uses depth to determine which call frame to log.
+// FatallnDepth(0, "msg") is the same as Fatalln("msg").
+func FatallnDepth(depth int, args ...interface{}) {
+	logging.printDepth(fatalLog, logging.logr, logging.filter, depth, args...)
+}
+
 // Fatalf logs to the FATAL, ERROR, WARNING, and INFO logs,
 // including a stack trace of all running goroutines, then calls os.Exit(255).
 // Arguments are handled in the manner of fmt.Printf; a newline is appended if missing.
 func Fatalf(format string, args ...interface{}) {
 	logging.printf(fatalLog, logging.logr, logging.filter, format, args...)
+}
+
+// FatalfDepth acts as Fatalf but uses depth to determine which call frame to log.
+// FatalfDepth(0, "msg", args...) is the same as Fatalf("msg", args...).
+func FatalfDepth(depth int, format string, args ...interface{}) {
+	logging.printfDepth(fatalLog, logging.logr, logging.filter, depth, format, args...)
 }
 
 // fatalNoStacks is non-zero if we are to exit without dumping goroutine stacks.
@@ -1666,11 +1746,25 @@ func Exitln(args ...interface{}) {
 	logging.println(fatalLog, logging.logr, logging.filter, args...)
 }
 
+// ExitlnDepth acts as Exitln but uses depth to determine which call frame to log.
+// ExitlnDepth(0, "msg") is the same as Exitln("msg").
+func ExitlnDepth(depth int, args ...interface{}) {
+	atomic.StoreUint32(&fatalNoStacks, 1)
+	logging.printDepth(fatalLog, logging.logr, logging.filter, depth, args...)
+}
+
 // Exitf logs to the FATAL, ERROR, WARNING, and INFO logs, then calls os.Exit(1).
 // Arguments are handled in the manner of fmt.Printf; a newline is appended if missing.
 func Exitf(format string, args ...interface{}) {
 	atomic.StoreUint32(&fatalNoStacks, 1)
 	logging.printf(fatalLog, logging.logr, logging.filter, format, args...)
+}
+
+// ExitfDepth acts as Exitf but uses depth to determine which call frame to log.
+// ExitfDepth(0, "msg", args...) is the same as Exitf("msg", args...).
+func ExitfDepth(depth int, format string, args ...interface{}) {
+	atomic.StoreUint32(&fatalNoStacks, 1)
+	logging.printfDepth(fatalLog, logging.logr, logging.filter, depth, format, args...)
 }
 
 // LogFilter is a collection of functions that can filter all logging calls,
