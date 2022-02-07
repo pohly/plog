@@ -714,7 +714,7 @@ func (l *loggingT) printlnDepth(s severity, logger *logr.Logger, filter LogFilte
 		args = filter.Filter(args)
 	}
 	fmt.Fprintln(buf, args...)
-	l.output(s, logger, buf, 0 /* depth */, file, line, false)
+	l.output(s, logger, buf, depth, file, line, false)
 }
 
 func (l *loggingT) print(s severity, logger *logr.Logger, filter LogFilter, args ...interface{}) {
@@ -758,7 +758,7 @@ func (l *loggingT) printfDepth(s severity, logger *logr.Logger, filter LogFilter
 	if buf.Bytes()[buf.Len()-1] != '\n' {
 		buf.WriteByte('\n')
 	}
-	l.output(s, logger, buf, 0 /* depth */, file, line, false)
+	l.output(s, logger, buf, depth, file, line, false)
 }
 
 // printWithFileLine behaves like print but uses the provided file and line number.  If
