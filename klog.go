@@ -1392,15 +1392,14 @@ func (l *loggingT) setV(pc uintptr) Level {
 type Verbose struct {
 	enabled bool
 	logr    *logr.Logger
-	filter  LogFilter
 }
 
 func newVerbose(level Level, b bool) Verbose {
 	if logging.logr == nil {
-		return Verbose{b, nil, logging.filter}
+		return Verbose{b, nil}
 	}
 	v := logging.logr.V(int(level))
-	return Verbose{b, &v, logging.filter}
+	return Verbose{b, &v}
 }
 
 // V reports whether verbosity at the call site is at least the requested level.
@@ -1463,7 +1462,7 @@ func (v Verbose) Enabled() bool {
 // See the documentation of V for usage.
 func (v Verbose) Info(args ...interface{}) {
 	if v.enabled {
-		logging.print(infoLog, v.logr, v.filter, args...)
+		logging.print(infoLog, v.logr, logging.filter, args...)
 	}
 }
 
@@ -1471,7 +1470,7 @@ func (v Verbose) Info(args ...interface{}) {
 // See the documentation of V for usage.
 func (v Verbose) InfoDepth(depth int, args ...interface{}) {
 	if v.enabled {
-		logging.printDepth(infoLog, v.logr, v.filter, depth, args...)
+		logging.printDepth(infoLog, v.logr, logging.filter, depth, args...)
 	}
 }
 
@@ -1479,7 +1478,7 @@ func (v Verbose) InfoDepth(depth int, args ...interface{}) {
 // See the documentation of V for usage.
 func (v Verbose) Infoln(args ...interface{}) {
 	if v.enabled {
-		logging.println(infoLog, v.logr, v.filter, args...)
+		logging.println(infoLog, v.logr, logging.filter, args...)
 	}
 }
 
@@ -1487,7 +1486,7 @@ func (v Verbose) Infoln(args ...interface{}) {
 // See the documentation of V for usage.
 func (v Verbose) InfolnDepth(depth int, args ...interface{}) {
 	if v.enabled {
-		logging.printlnDepth(infoLog, v.logr, v.filter, depth, args...)
+		logging.printlnDepth(infoLog, v.logr, logging.filter, depth, args...)
 	}
 }
 
@@ -1495,7 +1494,7 @@ func (v Verbose) InfolnDepth(depth int, args ...interface{}) {
 // See the documentation of V for usage.
 func (v Verbose) Infof(format string, args ...interface{}) {
 	if v.enabled {
-		logging.printf(infoLog, v.logr, v.filter, format, args...)
+		logging.printf(infoLog, v.logr, logging.filter, format, args...)
 	}
 }
 
@@ -1503,7 +1502,7 @@ func (v Verbose) Infof(format string, args ...interface{}) {
 // See the documentation of V for usage.
 func (v Verbose) InfofDepth(depth int, format string, args ...interface{}) {
 	if v.enabled {
-		logging.printfDepth(infoLog, v.logr, v.filter, depth, format, args...)
+		logging.printfDepth(infoLog, v.logr, logging.filter, depth, format, args...)
 	}
 }
 
@@ -1511,7 +1510,7 @@ func (v Verbose) InfofDepth(depth int, format string, args ...interface{}) {
 // See the documentation of V for usage.
 func (v Verbose) InfoS(msg string, keysAndValues ...interface{}) {
 	if v.enabled {
-		logging.infoS(v.logr, v.filter, 0, msg, keysAndValues...)
+		logging.infoS(v.logr, logging.filter, 0, msg, keysAndValues...)
 	}
 }
 
@@ -1525,14 +1524,14 @@ func InfoSDepth(depth int, msg string, keysAndValues ...interface{}) {
 // See the documentation of V for usage.
 func (v Verbose) InfoSDepth(depth int, msg string, keysAndValues ...interface{}) {
 	if v.enabled {
-		logging.infoS(v.logr, v.filter, depth, msg, keysAndValues...)
+		logging.infoS(v.logr, logging.filter, depth, msg, keysAndValues...)
 	}
 }
 
 // Deprecated: Use ErrorS instead.
 func (v Verbose) Error(err error, msg string, args ...interface{}) {
 	if v.enabled {
-		logging.errorS(err, v.logr, v.filter, 0, msg, args...)
+		logging.errorS(err, v.logr, logging.filter, 0, msg, args...)
 	}
 }
 
@@ -1540,7 +1539,7 @@ func (v Verbose) Error(err error, msg string, args ...interface{}) {
 // See the documentation of V for usage.
 func (v Verbose) ErrorS(err error, msg string, keysAndValues ...interface{}) {
 	if v.enabled {
-		logging.errorS(err, v.logr, v.filter, 0, msg, keysAndValues...)
+		logging.errorS(err, v.logr, logging.filter, 0, msg, keysAndValues...)
 	}
 }
 
