@@ -36,7 +36,11 @@ func TrimDuplicates(kvLists ...[]interface{}) [][]interface{} {
 		// initialise this output slice
 		outs[i] = []interface{}{}
 		// obtain a reference to the kvList we are processing
+		// and make sure it has an even number of entries
 		kvList := kvLists[i]
+		if len(kvList)%2 != 0 {
+			kvList = append(kvList, missingValue)
+		}
 
 		// start iterating at len(kvList) - 2 (i.e. the 2nd last item) for
 		// slices that have an even number of elements.

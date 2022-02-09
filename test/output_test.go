@@ -42,15 +42,9 @@ func TestKlogrOutput(t *testing.T) {
 		`I output.go:<LINE>] "test" keyWithoutValue="(MISSING)"
 I output.go:<LINE>] "test" keyWithoutValue="(MISSING)" anotherKeyWithoutValue="(MISSING)"
 I output.go:<LINE>] "test" keyWithoutValue="(MISSING)"
-`: `I output.go:<LINE>] "test" keyWithoutValue=<nil>
+`: `I output.go:<LINE>] "test" keyWithoutValue="(MISSING)"
 I output.go:<LINE>] "test" keyWithoutValue="anotherKeyWithoutValue"
-I output.go:<LINE>] "test" keyWithoutValue=<nil>
-`,
-		`I output.go:<LINE>] "test" akey="avalue" akey2="(MISSING)"
-`: `I output.go:<LINE>] "test" akey="avalue" akey2=<nil>
-`,
-		`I output.go:<LINE>] "test" basekey1="basevar1" basekey2="(MISSING)" akey="avalue" akey2="(MISSING)"
-`: `I output.go:<LINE>] "test" basekey1="basevar1" basekey2=<nil> akey="avalue" akey2=<nil>
+I output.go:<LINE>] "test" keyWithoutValue="(MISSING)"
 `,
 	}
 	Output(t, OutputConfig{
