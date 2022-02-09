@@ -23,6 +23,7 @@ import (
 	"github.com/go-logr/logr"
 
 	"k8s.io/klog/v2/klogr"
+	"k8s.io/klog/v2/textlogger"
 )
 
 func init() {
@@ -32,6 +33,26 @@ func init() {
 // TestKlogOutput tests klog output without a logger.
 func TestKlogOutput(t *testing.T) {
 	Output(t, OutputConfig{})
+}
+
+// TestTextloggerOutput tests the textlogger, directly and as backend.
+func TestTextloggerOutput(t *testing.T) {
+	newLogger := func(out io.Writer, v int, vmodule string) logr.Logger {
+		config := textlogger.NewConfig(
+			textlogger.Verbosity(v),
+			textlogger.Output(out),
+		)
+		if err := config.VModule().Set(vmodule); err != nil {
+			panic(err)
+		}
+		return textlogger.NewLogger(config)
+	}
+	t.Run("direct", func(t *testing.T) {
+		Output(t, OutputConfig{NewLogger: newLogger, SupportsVModule: true})
+	})
+	t.Run("klog-backend", func(t *testing.T) {
+		Output(t, OutputConfig{NewLogger: newLogger, AsBackend: true})
+	})
 }
 
 // TestKlogrOutput tests klogr output via klog.
