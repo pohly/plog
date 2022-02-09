@@ -623,6 +623,15 @@ func BenchmarkHeaderWithDir(b *testing.B) {
 
 // Ensure that benchmarks have side effects to avoid compiler optimization
 var result ObjectRef
+var enabled bool
+
+func BenchmarkV(b *testing.B) {
+	var v Verbose
+	for i := 0; i < b.N; i++ {
+		v = V(10)
+	}
+	enabled = v.Enabled()
+}
 
 func BenchmarkKRef(b *testing.B) {
 	var r ObjectRef
