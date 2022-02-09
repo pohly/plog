@@ -965,15 +965,18 @@ func (rb *redirectBuffer) Write(bytes []byte) (n int, err error) {
 //
 // To remove a backing logr implemention, use ClearLogger. Setting an
 // empty logger with SetLogger(logr.Logger{}) does not work.
+//
+// Modifying the logger is not thread-safe and should be done while no other
+// goroutines invoke log calls, usually during program initialization.
 func SetLogger(logr logr.Logger) {
-	logging.mu.Lock()
-	defer logging.mu.Unlock()
-
 	logging.logr = &logr
 }
 
 // ClearLogger removes a backing logr implementation if one was set earlier
 // with SetLogger.
+//
+// Modifying the logger is not thread-safe and should be done while no other
+// goroutines invoke log calls, usually during program initialization.
 func ClearLogger() {
 	logging.mu.Lock()
 	defer logging.mu.Unlock()
@@ -1774,10 +1777,11 @@ type LogFilter interface {
 	FilterS(msg string, keysAndValues []interface{}) (string, []interface{})
 }
 
+// SetLogFilter installs a filter that is used for all log calls.
+//
+// Modifying the filter is not thread-safe and should be done while no other
+// goroutines invoke log calls, usually during program initialization.
 func SetLogFilter(filter LogFilter) {
-	logging.mu.Lock()
-	defer logging.mu.Unlock()
-
 	logging.filter = filter
 }
 
