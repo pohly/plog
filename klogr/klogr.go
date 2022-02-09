@@ -170,9 +170,7 @@ func (l klogger) WithName(name string) logr.LogSink {
 }
 
 func (l klogger) WithValues(kvList ...interface{}) logr.LogSink {
-	// Three slice args forces a copy.
-	n := len(l.values)
-	l.values = append(l.values[:n:n], kvList...)
+	l.values = serialize.WithValues(l.values, kvList)
 	return &l
 }
 

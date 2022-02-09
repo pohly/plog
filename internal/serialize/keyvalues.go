@@ -22,6 +22,28 @@ import (
 	"strconv"
 )
 
+// WithValues implements LogSink.WithValues. The old key/value pairs are
+// assumed to be well-formed, the new ones are checked and padded if
+// necessary. It returns a new slice.
+func WithValues(oldKV, newKV []interface{}) []interface{} {
+	if len(newKV) == 0 {
+		return oldKV
+	}
+	newLen := len(oldKV) + len(newKV)
+	hasMissingValue := newLen%2 != 0
+	if hasMissingValue {
+		newLen++
+	}
+	// The new LogSink must have its own slice.
+	kv := make([]interface{}, 0, newLen)
+	kv = append(kv, oldKV...)
+	kv = append(kv, newKV...)
+	if hasMissingValue {
+		kv = append(kv, missingValue)
+	}
+	return kv
+}
+
 // TrimDuplicates deduplicates elements provided in multiple key/value tuple
 // slices, whilst maintaining the distinction between where the items are
 // contained.

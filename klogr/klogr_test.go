@@ -118,6 +118,15 @@ func testOutput(t *testing.T, format string) {
 			expectedKlogOutput: `"test" akey="avalue" akey2="(MISSING)"
 `,
 		},
+		"should correctly handle odd-numbers of KVs in WithValue": {
+			klogr:         new().WithValues("keyWithoutValue"),
+			text:          "test",
+			keysAndValues: []interface{}{"akey", "avalue", "akey2"},
+			expectedOutput: ` "msg"="test" "keyWithoutValue"="(MISSING)" "akey"="avalue" "akey2"="(MISSING)"
+`,
+			expectedKlogOutput: `"test" keyWithoutValue="(MISSING)" akey="avalue" akey2="(MISSING)"
+`,
+		},
 		"should correctly html characters": {
 			klogr:         new(),
 			text:          "test",

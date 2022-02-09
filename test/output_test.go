@@ -36,21 +36,9 @@ func TestKlogOutput(t *testing.T) {
 
 // TestKlogrOutput tests klogr output via klog.
 func TestKlogrOutput(t *testing.T) {
-	// klogr currently doesn't produce exactly the same output as klog.
-	// TODO: fix that.
-	mapping := map[string]string{
-		`I output.go:<LINE>] "test" keyWithoutValue="(MISSING)"
-I output.go:<LINE>] "test" keyWithoutValue="(MISSING)" anotherKeyWithoutValue="(MISSING)"
-I output.go:<LINE>] "test" keyWithoutValue="(MISSING)"
-`: `I output.go:<LINE>] "test" keyWithoutValue="(MISSING)"
-I output.go:<LINE>] "test" keyWithoutValue="anotherKeyWithoutValue"
-I output.go:<LINE>] "test" keyWithoutValue="(MISSING)"
-`,
-	}
 	Output(t, OutputConfig{
 		NewLogger: func(out io.Writer, v int, vmodule string) logr.Logger {
 			return klogr.NewWithOptions(klogr.WithFormat(klogr.FormatKlog))
 		},
-		ExpectedOutputMapping: mapping,
 	})
 }
