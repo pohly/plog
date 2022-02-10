@@ -31,6 +31,7 @@ import (
 	"io"
 	"regexp"
 	"runtime"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -427,6 +428,229 @@ I output.go:<LINE>] "test" firstKey=1 secondKey=3
 				printWithLogger(config.NewLogger(buffer, 10, test.vmodule))
 			})
 		})
+	}
+
+	if config.NewLogger == nil || config.AsBackend {
+		// Test all klog output functions.
+		//
+		// Each test case must be defined with the same number of
+		// lines, then the source code location of the call itself
+		// can be computed below.
+		tests := []struct {
+			name    string
+			logFunc func()
+			output  string
+		}{
+			{
+				name:    "Info",
+				logFunc: func() { klog.Info("hello", "world") },
+				output:  "I output.go:<LINE>] helloworld\n", // This looks odd, but simply is how klog works.
+			},
+			{
+				name:    "InfoDepth",
+				logFunc: func() { klog.InfoDepth(0, "hello", "world") },
+				output:  "I output.go:<LINE>] helloworld\n",
+			},
+			{
+				name:    "Infoln",
+				logFunc: func() { klog.Infoln("hello", "world") },
+				output:  "I output.go:<LINE>] hello world\n",
+			},
+			{
+				name:    "InfolnDepth",
+				logFunc: func() { klog.InfolnDepth(0, "hello", "world") },
+				output:  "I output.go:<LINE>] hello world\n",
+			},
+			{
+				name:    "Infof",
+				logFunc: func() { klog.Infof("hello %s", "world") },
+				output:  "I output.go:<LINE>] hello world\n",
+			},
+			{
+				name:    "InfofDepth",
+				logFunc: func() { klog.InfofDepth(0, "hello %s", "world") },
+				output:  "I output.go:<LINE>] hello world\n",
+			},
+			{
+				name:    "InfoS",
+				logFunc: func() { klog.InfoS("hello", "what", "world") },
+				output:  "I output.go:<LINE>] \"hello\" what=\"world\"\n",
+			},
+			{
+				name:    "InfoSDepth",
+				logFunc: func() { klog.InfoSDepth(0, "hello", "what", "world") },
+				output:  "I output.go:<LINE>] \"hello\" what=\"world\"\n",
+			},
+			{
+				name:    "Warning",
+				logFunc: func() { klog.Warning("hello", "world") },
+				output:  "W output.go:<LINE>] helloworld\n",
+			},
+			{
+				name:    "WarningDepth",
+				logFunc: func() { klog.WarningDepth(0, "hello", "world") },
+				output:  "W output.go:<LINE>] helloworld\n",
+			},
+			{
+				name:    "Warningln",
+				logFunc: func() { klog.Warningln("hello", "world") },
+				output:  "W output.go:<LINE>] hello world\n",
+			},
+			{
+				name:    "WarninglnDepth",
+				logFunc: func() { klog.WarninglnDepth(0, "hello", "world") },
+				output:  "W output.go:<LINE>] helloworld\n", // BUG
+			},
+			{
+				name:    "Warningf",
+				logFunc: func() { klog.Warningf("hello %s", "world") },
+				output:  "W output.go:<LINE>] hello world\n",
+			},
+			{
+				name:    "WarningfDepth",
+				logFunc: func() { klog.WarningfDepth(0, "hello %s", "world") },
+				output:  "W output.go:<LINE>] hello world\n",
+			},
+			{
+				name:    "Error",
+				logFunc: func() { klog.Error("hello", "world") },
+				output:  "E output.go:<LINE>] helloworld\n",
+			},
+			{
+				name:    "ErrorDepth",
+				logFunc: func() { klog.ErrorDepth(0, "hello", "world") },
+				output:  "E output.go:<LINE>] helloworld\n",
+			},
+			{
+				name:    "Errorln",
+				logFunc: func() { klog.Errorln("hello", "world") },
+				output:  "E output.go:<LINE>] hello world\n",
+			},
+			{
+				name:    "ErrorlnDepth",
+				logFunc: func() { klog.ErrorlnDepth(0, "hello", "world") },
+				output:  "E output.go:<LINE>] helloworld\n", // BUG
+			},
+			{
+				name:    "Errorf",
+				logFunc: func() { klog.Errorf("hello %s", "world") },
+				output:  "E output.go:<LINE>] hello world\n",
+			},
+			{
+				name:    "ErrorfDepth",
+				logFunc: func() { klog.ErrorfDepth(0, "hello %s", "world") },
+				output:  "E output.go:<LINE>] hello world\n",
+			},
+			{
+				name:    "ErrorS",
+				logFunc: func() { klog.ErrorS(errors.New("hello"), "world") },
+				output:  "E output.go:<LINE>] \"world\" err=\"hello\"\n",
+			},
+			{
+				name:    "ErrorSDepth",
+				logFunc: func() { klog.ErrorSDepth(0, errors.New("hello"), "world") },
+				output:  "E output.go:<LINE>] \"world\" err=\"hello\"\n",
+			},
+			{
+				name:    "V().Info",
+				logFunc: func() { klog.V(1).Info("hello", "one", "world") },
+				output:  "I output.go:<LINE>] hellooneworld\n",
+			},
+			{
+				name:    "V().InfoDepth",
+				logFunc: func() { klog.V(1).InfoDepth(0, "hello", "one", "world") },
+				output:  "I output.go:<LINE>] hellooneworld\n",
+			},
+			{
+				name:    "V().Infoln",
+				logFunc: func() { klog.V(1).Infoln("hello", "one", "world") },
+				output:  "I output.go:<LINE>] hello one world\n",
+			},
+			{
+				name:    "V().InfolnDepth",
+				logFunc: func() { klog.V(1).InfolnDepth(0, "hello", "one", "world") },
+				output:  "I output.go:<LINE>] hello one world\n",
+			},
+			{
+				name:    "V().Infof",
+				logFunc: func() { klog.V(1).Infof("hello %s %s", "one", "world") },
+				output:  "I output.go:<LINE>] hello one world\n",
+			},
+			{
+				name:    "V().InfofDepth",
+				logFunc: func() { klog.V(1).InfofDepth(0, "hello %s %s", "one", "world") },
+				output:  "I output.go:<LINE>] hello one world\n",
+			},
+			{
+				name:    "V().InfoS",
+				logFunc: func() { klog.V(1).InfoS("hello", "what", "one world") },
+				output:  "I output.go:<LINE>] \"hello\" what=\"one world\"\n",
+			},
+			{
+				name:    "V().InfoSDepth",
+				logFunc: func() { klog.V(1).InfoSDepth(0, "hello", "what", "one world") },
+				output:  "I output.go:<LINE>] \"hello\" what=\"one world\"\n",
+			},
+			{
+				name:    "V().ErrorS",
+				logFunc: func() { klog.V(1).ErrorS(errors.New("hello"), "one world") },
+				output:  "E output.go:<LINE>] \"one world\" err=\"hello\"\n",
+			},
+		}
+		_, _, line, _ := runtime.Caller(0)
+
+		for i, test := range tests {
+			t.Run(test.name, func(t *testing.T) {
+				var buffer bytes.Buffer
+				if config.NewLogger == nil {
+					klog.SetOutput(&buffer)
+				} else {
+					klog.SetLogger(config.NewLogger(&buffer, 10, ""))
+					defer klog.ClearLogger()
+				}
+				test.logFunc()
+				klog.Flush()
+
+				actual := buffer.String()
+				// Strip varying header.
+				re := `(?m)^(.).... ..:..:......... ....... output.go`
+				actual = regexp.MustCompile(re).ReplaceAllString(actual, `${1} output.go`)
+
+				// Inject expected line. This matches the if checks above, which are
+				// the same for both printWithKlog and printWithLogger.
+				callLine := line + 1 - (len(tests)-i)*5
+				expected := test.output
+
+				// When klog does string formating for
+				// non-structured calls, it passes the entire
+				// result, including a trailing newline, to
+				// Logger.Info.
+				if config.NewLogger != nil &&
+					!strings.HasSuffix(test.name, "S") &&
+					!strings.HasSuffix(test.name, "SDepth") {
+					// klog: I output.go:<LINE>] hello world
+					// with logger: I output.go:<LINE>] "hello world\n"
+					index := strings.Index(expected, "] ")
+					if index == -1 {
+						t.Fatalf("did not find ] separator: %s", expected)
+					}
+					expected = expected[0:index+2] + strconv.Quote(expected[index+2:]) + "\n"
+
+					// Warnings become info messages.
+					if strings.HasPrefix(expected, "W") {
+						expected = "I" + expected[1:]
+					}
+				}
+
+				if repl, ok := config.ExpectedOutputMapping[expected]; ok {
+					expected = repl
+				}
+				expected = strings.ReplaceAll(expected, "<LINE>", fmt.Sprintf("%d", callLine))
+				if actual != expected {
+					t.Errorf("Output mismatch. Expected:\n%s\nActual:\n%s\n", expected, actual)
+				}
+			})
+		}
 	}
 }
 
