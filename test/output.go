@@ -499,7 +499,7 @@ I output.go:<LINE>] "test" firstKey=1 secondKey=3
 			{
 				name:    "WarninglnDepth",
 				logFunc: func() { klog.WarninglnDepth(0, "hello", "world") },
-				output:  "W output.go:<LINE>] helloworld\n", // BUG
+				output:  "W output.go:<LINE>] hello world\n",
 			},
 			{
 				name:    "Warningf",
@@ -529,7 +529,7 @@ I output.go:<LINE>] "test" firstKey=1 secondKey=3
 			{
 				name:    "ErrorlnDepth",
 				logFunc: func() { klog.ErrorlnDepth(0, "hello", "world") },
-				output:  "E output.go:<LINE>] helloworld\n", // BUG
+				output:  "E output.go:<LINE>] hello world\n",
 			},
 			{
 				name:    "Errorf",
