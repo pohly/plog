@@ -21,7 +21,6 @@ package output_test
 
 import (
 	"io"
-	"strings"
 	"testing"
 
 	"github.com/go-logr/logr"
@@ -112,10 +111,6 @@ func TestKlogrStackText(t *testing.T) {
 // records that.
 func TestKlogrStackZapr(t *testing.T) {
 	mapping := test.ZaprOutputMappingIndirect()
-	for key, value := range mapping {
-		// BUG (https://github.com/kubernetes/klog/issues/294): verbosity is lost
-		mapping[key] = strings.ReplaceAll(value, `"v":9`, `"v":0`)
-	}
 
 	// klogr doesn't warn about invalid KVs and just inserts
 	// "(MISSING)".
