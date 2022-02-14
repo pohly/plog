@@ -23,6 +23,18 @@ Historical context is available here:
  * https://groups.google.com/forum/#!msg/kubernetes-sig-architecture/wCWiWf3Juzs/hXRVBH90CgAJ
  * https://groups.google.com/forum/#!msg/kubernetes-dev/7vnijOMhLS0/1oRiNtigBgAJ
 
+## Release versioning
+
+Semantic versioning is used in this repository. It contains several Go modules
+with different levels of stability:
+- `k8s.io/klog/v2` - stable API, `vX.Y.Z` tags
+- `k8s.io/tools` - no stable API yet (may change eventually), `tools/v0.Y.Z` tags
+- `examples` - no stable API, no tags, no intention to ever stabilize
+
+Exempt from the API stability guarantee are items (packages, functions, etc.)
+which are marked explicitly as `EXPERIMENTAL` in their docs comment. Those
+may still change in incompatible ways or get removed entirely.
+
 ----
 
 How to use klog

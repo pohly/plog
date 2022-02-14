@@ -35,6 +35,10 @@ import (
 	"time"
 
 	"github.com/go-logr/logr"
+
+	"k8s.io/klog/v2/internal/buffer"
+	"k8s.io/klog/v2/internal/severity"
+	"k8s.io/klog/v2/internal/test"
 )
 
 // TODO: This test package should be refactored so that tests cannot
@@ -67,7 +71,7 @@ func (f *flushBuffer) Sync() error {
 }
 
 // swap sets the log writers and returns the old array.
-func (l *loggingT) swap(writers [numSeverity]flushSyncWriter) (old [numSeverity]flushSyncWriter) {
+func (l *loggingT) swap(writers [severity.NumSeverity]flushSyncWriter) (old [severity.NumSeverity]flushSyncWriter) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 	old = l.file
@@ -78,17 +82,17 @@ func (l *loggingT) swap(writers [numSeverity]flushSyncWriter) (old [numSeverity]
 }
 
 // newBuffers sets the log writers to all new byte buffers and returns the old array.
-func (l *loggingT) newBuffers() [numSeverity]flushSyncWriter {
-	return l.swap([numSeverity]flushSyncWriter{new(flushBuffer), new(flushBuffer), new(flushBuffer), new(flushBuffer)})
+func (l *loggingT) newBuffers() [severity.NumSeverity]flushSyncWriter {
+	return l.swap([severity.NumSeverity]flushSyncWriter{new(flushBuffer), new(flushBuffer), new(flushBuffer), new(flushBuffer)})
 }
 
 // contents returns the specified log value as a string.
-func contents(s severity) string {
+func contents(s severity.Severity) string {
 	return logging.file[s].(*flushBuffer).String()
 }
 
 // contains reports whether the string is contained in the log.
-func contains(s severity, str string, t *testing.T) bool {
+func contains(s severity.Severity, str string, t *testing.T) bool {
 	return strings.Contains(contents(s), str)
 }
 
@@ -103,10 +107,10 @@ func TestInfo(t *testing.T) {
 	setFlags()
 	defer logging.swap(logging.newBuffers())
 	Info("test")
-	if !contains(infoLog, "I", t) {
-		t.Errorf("Info has wrong character: %q", contents(infoLog))
+	if !contains(severity.InfoLog, "I", t) {
+		t.Errorf("Info has wrong character: %q", contents(severity.InfoLog))
 	}
-	if !contains(infoLog, "test", t) {
+	if !contains(severity.InfoLog, "test", t) {
 		t.Error("Info failed")
 	}
 }
@@ -122,7 +126,7 @@ func TestInfoDepth(t *testing.T) {
 	InfoDepth(0, "depth-test0")
 	f()
 
-	msgs := strings.Split(strings.TrimSuffix(contents(infoLog), "\n"), "\n")
+	msgs := strings.Split(strings.TrimSuffix(contents(severity.InfoLog), "\n"), "\n")
 	if len(msgs) != 2 {
 		t.Fatalf("Got %d lines, expected 2", len(msgs))
 	}
@@ -174,10 +178,10 @@ func TestStandardLog(t *testing.T) {
 	setFlags()
 	defer logging.swap(logging.newBuffers())
 	stdLog.Print("test")
-	if !contains(infoLog, "I", t) {
-		t.Errorf("Info has wrong character: %q", contents(infoLog))
+	if !contains(severity.InfoLog, "I", t) {
+		t.Errorf("Info has wrong character: %q", contents(severity.InfoLog))
 	}
-	if !contains(infoLog, "test", t) {
+	if !contains(severity.InfoLog, "test", t) {
 		t.Error("Info failed")
 	}
 }
@@ -190,19 +194,19 @@ func TestHeader(t *testing.T) {
 	timeNow = func() time.Time {
 		return time.Date(2006, 1, 2, 15, 4, 5, .067890e9, time.Local)
 	}
-	pid = 1234
+	buffer.Pid = 1234
 	Info("test")
 	var line int
 	format := "I0102 15:04:05.067890    1234 klog_test.go:%d] test\n"
-	n, err := fmt.Sscanf(contents(infoLog), format, &line)
+	n, err := fmt.Sscanf(contents(severity.InfoLog), format, &line)
 	if n != 1 || err != nil {
-		t.Errorf("log format error: %d elements, error %s:\n%s", n, err, contents(infoLog))
+		t.Errorf("log format error: %d elements, error %s:\n%s", n, err, contents(severity.InfoLog))
 	}
 	// Scanf treats multiple spaces as equivalent to a single space,
 	// so check for correct space-padding also.
 	want := fmt.Sprintf(format, line)
-	if contents(infoLog) != want {
-		t.Errorf("log format error: got:\n\t%q\nwant:\t%q", contents(infoLog), want)
+	if contents(severity.InfoLog) != want {
+		t.Errorf("log format error: got:\n\t%q\nwant:\t%q", contents(severity.InfoLog), want)
 	}
 }
 
@@ -217,8 +221,8 @@ func TestHeaderWithDir(t *testing.T) {
 	pid = 1234
 	Info("test")
 	re := regexp.MustCompile(`I0102 15:04:05.067890    1234 (klog|v2)/klog_test.go:(\d+)] test\n`)
-	if !re.MatchString(contents(infoLog)) {
-		t.Errorf("log format error: line does not match regex:\n\t%q\n", contents(infoLog))
+	if !re.MatchString(contents(severity.InfoLog)) {
+		t.Errorf("log format error: line does not match regex:\n\t%q\n", contents(severity.InfoLog))
 	}
 }
 
@@ -229,17 +233,17 @@ func TestError(t *testing.T) {
 	setFlags()
 	defer logging.swap(logging.newBuffers())
 	Error("test")
-	if !contains(errorLog, "E", t) {
-		t.Errorf("Error has wrong character: %q", contents(errorLog))
+	if !contains(severity.ErrorLog, "E", t) {
+		t.Errorf("Error has wrong character: %q", contents(severity.ErrorLog))
 	}
-	if !contains(errorLog, "test", t) {
+	if !contains(severity.ErrorLog, "test", t) {
 		t.Error("Error failed")
 	}
-	str := contents(errorLog)
-	if !contains(warningLog, str, t) {
+	str := contents(severity.ErrorLog)
+	if !contains(severity.WarningLog, str, t) {
 		t.Error("Warning failed")
 	}
-	if !contains(infoLog, str, t) {
+	if !contains(severity.InfoLog, str, t) {
 		t.Error("Info failed")
 	}
 }
@@ -256,17 +260,17 @@ func TestErrorWithOneOutput(t *testing.T) {
 		logging.oneOutput = false
 	}()
 	Error("test")
-	if !contains(errorLog, "E", t) {
-		t.Errorf("Error has wrong character: %q", contents(errorLog))
+	if !contains(severity.ErrorLog, "E", t) {
+		t.Errorf("Error has wrong character: %q", contents(severity.ErrorLog))
 	}
-	if !contains(errorLog, "test", t) {
+	if !contains(severity.ErrorLog, "test", t) {
 		t.Error("Error failed")
 	}
-	str := contents(errorLog)
-	if contains(warningLog, str, t) {
+	str := contents(severity.ErrorLog)
+	if contains(severity.WarningLog, str, t) {
 		t.Error("Warning failed")
 	}
-	if contains(infoLog, str, t) {
+	if contains(severity.InfoLog, str, t) {
 		t.Error("Info failed")
 	}
 }
@@ -278,14 +282,14 @@ func TestWarning(t *testing.T) {
 	setFlags()
 	defer logging.swap(logging.newBuffers())
 	Warning("test")
-	if !contains(warningLog, "W", t) {
-		t.Errorf("Warning has wrong character: %q", contents(warningLog))
+	if !contains(severity.WarningLog, "W", t) {
+		t.Errorf("Warning has wrong character: %q", contents(severity.WarningLog))
 	}
-	if !contains(warningLog, "test", t) {
+	if !contains(severity.WarningLog, "test", t) {
 		t.Error("Warning failed")
 	}
-	str := contents(warningLog)
-	if !contains(infoLog, str, t) {
+	str := contents(severity.WarningLog)
+	if !contains(severity.InfoLog, str, t) {
 		t.Error("Info failed")
 	}
 }
@@ -302,14 +306,14 @@ func TestWarningWithOneOutput(t *testing.T) {
 		logging.oneOutput = false
 	}()
 	Warning("test")
-	if !contains(warningLog, "W", t) {
-		t.Errorf("Warning has wrong character: %q", contents(warningLog))
+	if !contains(severity.WarningLog, "W", t) {
+		t.Errorf("Warning has wrong character: %q", contents(severity.WarningLog))
 	}
-	if !contains(warningLog, "test", t) {
+	if !contains(severity.WarningLog, "test", t) {
 		t.Error("Warning failed")
 	}
-	str := contents(warningLog)
-	if contains(infoLog, str, t) {
+	str := contents(severity.WarningLog)
+	if contains(severity.InfoLog, str, t) {
 		t.Error("Info failed")
 	}
 }
@@ -321,10 +325,10 @@ func TestV(t *testing.T) {
 	logging.verbosity.Set("2")
 	defer logging.verbosity.Set("0")
 	V(2).Info("test")
-	if !contains(infoLog, "I", t) {
-		t.Errorf("Info has wrong character: %q", contents(infoLog))
+	if !contains(severity.InfoLog, "I", t) {
+		t.Errorf("Info has wrong character: %q", contents(severity.InfoLog))
 	}
-	if !contains(infoLog, "test", t) {
+	if !contains(severity.InfoLog, "test", t) {
 		t.Error("Info failed")
 	}
 }
@@ -345,10 +349,10 @@ func TestVmoduleOn(t *testing.T) {
 		t.Error("V enabled for 3")
 	}
 	V(2).Info("test")
-	if !contains(infoLog, "I", t) {
-		t.Errorf("Info has wrong character: %q", contents(infoLog))
+	if !contains(severity.InfoLog, "I", t) {
+		t.Errorf("Info has wrong character: %q", contents(severity.InfoLog))
 	}
-	if !contains(infoLog, "test", t) {
+	if !contains(severity.InfoLog, "test", t) {
 		t.Error("Info failed")
 	}
 }
@@ -365,7 +369,7 @@ func TestVmoduleOff(t *testing.T) {
 		}
 	}
 	V(2).Info("test")
-	if contents(infoLog) != "" {
+	if contents(severity.InfoLog) != "" {
 		t.Error("V logged incorrectly")
 	}
 }
@@ -467,7 +471,7 @@ func TestRollover(t *testing.T) {
 	defer func(previous uint64) { MaxSize = previous }(MaxSize)
 	MaxSize = 512
 	Info("x") // Be sure we have a file.
-	info, ok := logging.file[infoLog].(*syncBuffer)
+	info, ok := logging.file[severity.InfoLog].(*syncBuffer)
 	if !ok {
 		t.Fatal("info wasn't created")
 	}
@@ -528,7 +532,7 @@ func TestOpenAppendOnStart(t *testing.T) {
 
 	// Logging creates the file
 	Info(x)
-	_, ok := logging.file[infoLog].(*syncBuffer)
+	_, ok := logging.file[severity.InfoLog].(*syncBuffer)
 	if !ok {
 		t.Fatal("info wasn't created")
 	}
@@ -593,7 +597,7 @@ func TestLogBacktraceAt(t *testing.T) {
 		setTraceLocation(file, line, ok, +2) // Two lines between Caller and Info calls.
 		Info("we want a stack trace here")
 	}
-	numAppearances := strings.Count(contents(infoLog), infoLine)
+	numAppearances := strings.Count(contents(severity.InfoLog), infoLine)
 	if numAppearances < 2 {
 		// Need 2 appearances, one in the log header and one in the trace:
 		//   log_test.go:281: I0511 16:36:06.952398 02238 log_test.go:280] we want a stack trace here
@@ -602,27 +606,36 @@ func TestLogBacktraceAt(t *testing.T) {
 		//   ...
 		// We could be more precise but that would require knowing the details
 		// of the traceback format, which may not be dependable.
-		t.Fatal("got no trace back; log is ", contents(infoLog))
+		t.Fatal("got no trace back; log is ", contents(severity.InfoLog))
 	}
 }
 
 func BenchmarkHeader(b *testing.B) {
 	for i := 0; i < b.N; i++ {
-		buf, _, _ := logging.header(infoLog, 0)
-		logging.putBuffer(buf)
+		buf, _, _ := logging.header(severity.InfoLog, 0)
+		logging.bufferCache.PutBuffer(buf)
 	}
 }
 
 func BenchmarkHeaderWithDir(b *testing.B) {
 	logging.addDirHeader = true
 	for i := 0; i < b.N; i++ {
-		buf, _, _ := logging.header(infoLog, 0)
-		logging.putBuffer(buf)
+		buf, _, _ := logging.header(severity.InfoLog, 0)
+		logging.bufferCache.PutBuffer(buf)
 	}
 }
 
 // Ensure that benchmarks have side effects to avoid compiler optimization
 var result ObjectRef
+var enabled bool
+
+func BenchmarkV(b *testing.B) {
+	var v Verbose
+	for i := 0; i < b.N; i++ {
+		v = V(10)
+	}
+	enabled = v.Enabled()
+}
 
 func BenchmarkKRef(b *testing.B) {
 	var r ObjectRef
@@ -633,7 +646,7 @@ func BenchmarkKRef(b *testing.B) {
 }
 
 func BenchmarkKObj(b *testing.B) {
-	a := kMetadataMock{name: "a", ns: "a"}
+	a := test.KMetadataMock{Name: "a", NS: "a"}
 	var r ObjectRef
 	for i := 0; i < b.N; i++ {
 		r = KObj(&a)
@@ -654,9 +667,11 @@ func BenchmarkLogs(b *testing.B) {
 	logging.verbosity.Set("0")
 	logging.toStderr = false
 	logging.alsoToStderr = false
-	logging.stderrThreshold = fatalLog
+	logging.stderrThreshold = severityValue{
+		Severity: severity.FatalLog,
+	}
 	logging.logFile = testFile.Name()
-	logging.swap([numSeverity]flushSyncWriter{nil, nil, nil, nil})
+	logging.swap([severity.NumSeverity]flushSyncWriter{nil, nil, nil, nil})
 
 	for i := 0; i < b.N; i++ {
 		Error("error")
@@ -764,33 +779,11 @@ func TestInfoObjectRef(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			Info(tt.ref)
-			if !contains(infoLog, tt.want, t) {
-				t.Errorf("expected %v, got %v", tt.want, contents(infoLog))
+			if !contains(severity.InfoLog, tt.want, t) {
+				t.Errorf("expected %v, got %v", tt.want, contents(severity.InfoLog))
 			}
 		})
 	}
-}
-
-type kMetadataMock struct {
-	name, ns string
-}
-
-func (m kMetadataMock) GetName() string {
-	return m.name
-}
-func (m kMetadataMock) GetNamespace() string {
-	return m.ns
-}
-
-type ptrKMetadataMock struct {
-	name, ns string
-}
-
-func (m *ptrKMetadataMock) GetName() string {
-	return m.name
-}
-func (m *ptrKMetadataMock) GetNamespace() string {
-	return m.ns
 }
 
 func TestKObj(t *testing.T) {
@@ -801,17 +794,17 @@ func TestKObj(t *testing.T) {
 	}{
 		{
 			name: "nil passed as pointer KMetadata implementation",
-			obj:  (*ptrKMetadataMock)(nil),
+			obj:  (*test.PtrKMetadataMock)(nil),
 			want: ObjectRef{},
 		},
 		{
 			name: "empty struct passed as non-pointer KMetadata implementation",
-			obj:  kMetadataMock{},
+			obj:  test.KMetadataMock{},
 			want: ObjectRef{},
 		},
 		{
 			name: "nil pointer passed to non-pointer KMetadata implementation",
-			obj:  (*kMetadataMock)(nil),
+			obj:  (*test.KMetadataMock)(nil),
 			want: ObjectRef{},
 		},
 		{
@@ -821,7 +814,7 @@ func TestKObj(t *testing.T) {
 		},
 		{
 			name: "with ns",
-			obj:  &kMetadataMock{"test-name", "test-ns"},
+			obj:  &test.KMetadataMock{Name: "test-name", NS: "test-ns"},
 			want: ObjectRef{
 				Name:      "test-name",
 				Namespace: "test-ns",
@@ -829,7 +822,7 @@ func TestKObj(t *testing.T) {
 		},
 		{
 			name: "without ns",
-			obj:  &kMetadataMock{"test-name", ""},
+			obj:  &test.KMetadataMock{Name: "test-name", NS: ""},
 			want: ObjectRef{
 				Name: "test-name",
 			},
@@ -920,16 +913,16 @@ func TestInfoS(t *testing.T) {
 	}
 	for _, f := range functions {
 		for _, data := range testDataInfo {
-			logging.file[infoLog] = &flushBuffer{}
+			logging.file[severity.InfoLog] = &flushBuffer{}
 			f(data.msg, data.keysValues...)
 			var line int
-			n, err := fmt.Sscanf(contents(infoLog), data.format, &line)
+			n, err := fmt.Sscanf(contents(severity.InfoLog), data.format, &line)
 			if n != 1 || err != nil {
-				t.Errorf("log format error: %d elements, error %s:\n%s", n, err, contents(infoLog))
+				t.Errorf("log format error: %d elements, error %s:\n%s", n, err, contents(severity.InfoLog))
 			}
 			want := fmt.Sprintf(data.format, line)
-			if contents(infoLog) != want {
-				t.Errorf("InfoS has wrong format: \n got:\t%s\nwant:\t%s", contents(infoLog), want)
+			if contents(severity.InfoLog) != want {
+				t.Errorf("InfoS has wrong format: \n got:\t%s\nwant:\t%s", contents(severity.InfoLog), want)
 			}
 		}
 	}
@@ -996,24 +989,24 @@ second value line`},
 
 	for l := Level(0); l < Level(4); l++ {
 		for _, data := range testDataInfo {
-			logging.file[infoLog] = &flushBuffer{}
+			logging.file[severity.InfoLog] = &flushBuffer{}
 
 			V(l).InfoS(data.msg, data.keysValues...)
 
 			var want string
 			var line int
 			if l <= 2 {
-				n, err := fmt.Sscanf(contents(infoLog), data.format, &line)
+				n, err := fmt.Sscanf(contents(severity.InfoLog), data.format, &line)
 				if n != 1 || err != nil {
-					t.Errorf("log format error: %d elements, error %s:\n%s", n, err, contents(infoLog))
+					t.Errorf("log format error: %d elements, error %s:\n%s", n, err, contents(severity.InfoLog))
 				}
 
 				want = fmt.Sprintf(data.format, line)
 			} else {
 				want = ""
 			}
-			if contents(infoLog) != want {
-				t.Errorf("V(%d).InfoS has unexpected output:\ngot:\n%s\nwant:\n%s\n", l, contents(infoLog), want)
+			if contents(severity.InfoLog) != want {
+				t.Errorf("V(%d).InfoS has unexpected output:\ngot:\n%s\nwant:\n%s\n", l, contents(severity.InfoLog), want)
 			}
 		}
 	}
@@ -1048,140 +1041,17 @@ func TestErrorS(t *testing.T) {
 			},
 		}
 		for _, e := range errorList {
-			logging.file[errorLog] = &flushBuffer{}
+			logging.file[severity.ErrorLog] = &flushBuffer{}
 			f(e.err, "Failed to update pod status", "pod", "kubedns")
 			var line int
-			n, err := fmt.Sscanf(contents(errorLog), e.format, &line)
+			n, err := fmt.Sscanf(contents(severity.ErrorLog), e.format, &line)
 			if n != 1 || err != nil {
-				t.Errorf("log format error: %d elements, error %s:\n%s", n, err, contents(errorLog))
+				t.Errorf("log format error: %d elements, error %s:\n%s", n, err, contents(severity.ErrorLog))
 			}
 			want := fmt.Sprintf(e.format, line)
-			if contents(errorLog) != want {
-				t.Errorf("ErrorS has wrong format:\ngot:\n%s\nwant:\n%s\n", contents(errorLog), want)
+			if contents(severity.ErrorLog) != want {
+				t.Errorf("ErrorS has wrong format:\ngot:\n%s\nwant:\n%s\n", contents(severity.ErrorLog), want)
 			}
-		}
-	}
-}
-
-// point conforms to fmt.Stringer interface as it implements the String() method
-type point struct {
-	x int
-	y int
-}
-
-// we now have a value receiver
-func (p point) String() string {
-	return fmt.Sprintf("x=%d, y=%d", p.x, p.y)
-}
-
-// Test that kvListFormat works as advertised.
-func TestKvListFormat(t *testing.T) {
-	var emptyPoint *point
-	var testKVList = []struct {
-		keysValues []interface{}
-		want       string
-	}{
-		{
-			keysValues: []interface{}{"pod", "kubedns"},
-			want:       " pod=\"kubedns\"",
-		},
-		{
-			keysValues: []interface{}{"pod", "kubedns", "update", true},
-			want:       " pod=\"kubedns\" update=true",
-		},
-		{
-			keysValues: []interface{}{"pod", "kubedns", "spec", struct {
-				X int
-				Y string
-				N time.Time
-			}{X: 76, Y: "strval", N: time.Date(2006, 1, 2, 15, 4, 5, .067890e9, time.UTC)}},
-			want: " pod=\"kubedns\" spec={X:76 Y:strval N:2006-01-02 15:04:05.06789 +0000 UTC}",
-		},
-		{
-			keysValues: []interface{}{"pod", "kubedns", "values", []int{8, 6, 7, 5, 3, 0, 9}},
-			want:       " pod=\"kubedns\" values=[8 6 7 5 3 0 9]",
-		},
-		{
-			keysValues: []interface{}{"pod", "kubedns", "values", []string{"deployment", "svc", "configmap"}},
-			want:       " pod=\"kubedns\" values=[deployment svc configmap]",
-		},
-		{
-			keysValues: []interface{}{"pod", "kubedns", "bytes", []byte("test case for byte array")},
-			want:       " pod=\"kubedns\" bytes=\"test case for byte array\"",
-		},
-		{
-			keysValues: []interface{}{"pod", "kubedns", "bytes", []byte("��=� ⌘")},
-			want:       " pod=\"kubedns\" bytes=\"\\ufffd\\ufffd=\\ufffd \\u2318\"",
-		},
-		{
-			keysValues: []interface{}{"multiLineString", `Hello world!
-	Starts with tab.
-  Starts with spaces.
-No whitespace.`,
-				"pod", "kubedns",
-			},
-			want: ` multiLineString=<
-	Hello world!
-		Starts with tab.
-	  Starts with spaces.
-	No whitespace.
- > pod="kubedns"`,
-		},
-		{
-			keysValues: []interface{}{"pod", "kubedns", "maps", map[string]int{"three": 4}},
-			want:       " pod=\"kubedns\" maps=map[three:4]",
-		},
-		{
-			keysValues: []interface{}{"pod", KRef("kube-system", "kubedns"), "status", "ready"},
-			want:       " pod=\"kube-system/kubedns\" status=\"ready\"",
-		},
-		{
-			keysValues: []interface{}{"pod", KRef("", "kubedns"), "status", "ready"},
-			want:       " pod=\"kubedns\" status=\"ready\"",
-		},
-		{
-			keysValues: []interface{}{"pod", KObj(kMetadataMock{"test-name", "test-ns"}), "status", "ready"},
-			want:       " pod=\"test-ns/test-name\" status=\"ready\"",
-		},
-		{
-			keysValues: []interface{}{"pod", KObj(kMetadataMock{"test-name", ""}), "status", "ready"},
-			want:       " pod=\"test-name\" status=\"ready\"",
-		},
-		{
-			keysValues: []interface{}{"pod", KObj(nil), "status", "ready"},
-			want:       " pod=\"\" status=\"ready\"",
-		},
-		{
-			keysValues: []interface{}{"pod", KObj((*ptrKMetadataMock)(nil)), "status", "ready"},
-			want:       " pod=\"\" status=\"ready\"",
-		},
-		{
-			keysValues: []interface{}{"pod", KObj((*kMetadataMock)(nil)), "status", "ready"},
-			want:       " pod=\"\" status=\"ready\"",
-		},
-		{
-			keysValues: []interface{}{"pods", KObjs([]kMetadataMock{
-				{
-					name: "kube-dns",
-					ns:   "kube-system",
-				},
-				{
-					name: "mi-conf",
-				},
-			})},
-			want: " pods=[kube-system/kube-dns mi-conf]",
-		},
-		{
-			keysValues: []interface{}{"point-1", point{100, 200}, "point-2", emptyPoint},
-			want:       " point-1=\"x=100, y=200\" point-2=\"nil\"",
-		},
-	}
-
-	for _, d := range testKVList {
-		b := &bytes.Buffer{}
-		kvListFormat(b, d.keysValues...)
-		if b.String() != d.want {
-			t.Errorf("kvlist format error:\ngot:\n%s\nwant:\n%s\n", b.String(), d.want)
 		}
 	}
 }
@@ -1190,7 +1060,9 @@ func createTestValueOfLoggingT() *loggingT {
 	l := new(loggingT)
 	l.toStderr = true
 	l.alsoToStderr = false
-	l.stderrThreshold = errorLog
+	l.stderrThreshold = severityValue{
+		Severity: severity.ErrorLog,
+	}
 	l.verbosity = Level(0)
 	l.skipHeaders = false
 	l.skipLogHeaders = false
@@ -1277,116 +1149,116 @@ func TestLogFilter(t *testing.T) {
 	funcs := []struct {
 		name     string
 		logFunc  func(args ...interface{})
-		severity severity
+		severity severity.Severity
 	}{{
 		name:     "Info",
 		logFunc:  Info,
-		severity: infoLog,
+		severity: severity.InfoLog,
 	}, {
 		name: "InfoDepth",
 		logFunc: func(args ...interface{}) {
 			InfoDepth(1, args...)
 		},
-		severity: infoLog,
+		severity: severity.InfoLog,
 	}, {
 		name:     "Infoln",
 		logFunc:  Infoln,
-		severity: infoLog,
+		severity: severity.InfoLog,
 	}, {
 		name: "Infof",
 		logFunc: func(args ...interface{}) {
 
 			Infof(args[0].(string), args[1:]...)
 		},
-		severity: infoLog,
+		severity: severity.InfoLog,
 	}, {
 		name: "InfoS",
 		logFunc: func(args ...interface{}) {
 			InfoS(args[0].(string), args[1:]...)
 		},
-		severity: infoLog,
+		severity: severity.InfoLog,
 	}, {
 		name:     "Warning",
 		logFunc:  Warning,
-		severity: warningLog,
+		severity: severity.WarningLog,
 	}, {
 		name: "WarningDepth",
 		logFunc: func(args ...interface{}) {
 			WarningDepth(1, args...)
 		},
-		severity: warningLog,
+		severity: severity.WarningLog,
 	}, {
 		name:     "Warningln",
 		logFunc:  Warningln,
-		severity: warningLog,
+		severity: severity.WarningLog,
 	}, {
 		name: "Warningf",
 		logFunc: func(args ...interface{}) {
 			Warningf(args[0].(string), args[1:]...)
 		},
-		severity: warningLog,
+		severity: severity.WarningLog,
 	}, {
 		name:     "Error",
 		logFunc:  Error,
-		severity: errorLog,
+		severity: severity.ErrorLog,
 	}, {
 		name: "ErrorDepth",
 		logFunc: func(args ...interface{}) {
 			ErrorDepth(1, args...)
 		},
-		severity: errorLog,
+		severity: severity.ErrorLog,
 	}, {
 		name:     "Errorln",
 		logFunc:  Errorln,
-		severity: errorLog,
+		severity: severity.ErrorLog,
 	}, {
 		name: "Errorf",
 		logFunc: func(args ...interface{}) {
 			Errorf(args[0].(string), args[1:]...)
 		},
-		severity: errorLog,
+		severity: severity.ErrorLog,
 	}, {
 		name: "ErrorS",
 		logFunc: func(args ...interface{}) {
 			ErrorS(errors.New("testerror"), args[0].(string), args[1:]...)
 		},
-		severity: errorLog,
+		severity: severity.ErrorLog,
 	}, {
 		name: "V().Info",
 		logFunc: func(args ...interface{}) {
 			V(0).Info(args...)
 		},
-		severity: infoLog,
+		severity: severity.InfoLog,
 	}, {
 		name: "V().Infoln",
 		logFunc: func(args ...interface{}) {
 			V(0).Infoln(args...)
 		},
-		severity: infoLog,
+		severity: severity.InfoLog,
 	}, {
 		name: "V().Infof",
 		logFunc: func(args ...interface{}) {
 			V(0).Infof(args[0].(string), args[1:]...)
 		},
-		severity: infoLog,
+		severity: severity.InfoLog,
 	}, {
 		name: "V().InfoS",
 		logFunc: func(args ...interface{}) {
 			V(0).InfoS(args[0].(string), args[1:]...)
 		},
-		severity: infoLog,
+		severity: severity.InfoLog,
 	}, {
 		name: "V().Error",
 		logFunc: func(args ...interface{}) {
 			V(0).Error(errors.New("test error"), args[0].(string), args[1:]...)
 		},
-		severity: errorLog,
+		severity: severity.ErrorLog,
 	}, {
 		name: "V().ErrorS",
 		logFunc: func(args ...interface{}) {
 			V(0).ErrorS(errors.New("test error"), args[0].(string), args[1:]...)
 		},
-		severity: errorLog,
+		severity: severity.ErrorLog,
 	}}
 
 	testcases := []struct {
@@ -1425,13 +1297,13 @@ func TestInfoWithLogr(t *testing.T) {
 	}{{
 		msg: "foo",
 		expected: testLogrEntry{
-			severity: infoLog,
+			severity: severity.InfoLog,
 			msg:      "foo\n",
 		},
 	}, {
 		msg: "",
 		expected: testLogrEntry{
-			severity: infoLog,
+			severity: severity.InfoLog,
 			msg:      "\n",
 		},
 	}}
@@ -1463,7 +1335,7 @@ func TestInfoSWithLogr(t *testing.T) {
 		msg:        "foo",
 		keysValues: []interface{}{},
 		expected: testLogrEntry{
-			severity:      infoLog,
+			severity:      severity.InfoLog,
 			msg:           "foo",
 			keysAndValues: []interface{}{},
 		},
@@ -1471,7 +1343,7 @@ func TestInfoSWithLogr(t *testing.T) {
 		msg:        "bar",
 		keysValues: []interface{}{"a", 1},
 		expected: testLogrEntry{
-			severity:      infoLog,
+			severity:      severity.InfoLog,
 			msg:           "bar",
 			keysAndValues: []interface{}{"a", 1},
 		},
@@ -1508,7 +1380,7 @@ func TestErrorSWithLogr(t *testing.T) {
 		msg:        "foo1",
 		keysValues: []interface{}{},
 		expected: testLogrEntry{
-			severity:      errorLog,
+			severity:      severity.ErrorLog,
 			msg:           "foo1",
 			keysAndValues: []interface{}{},
 			err:           testError,
@@ -1518,7 +1390,7 @@ func TestErrorSWithLogr(t *testing.T) {
 		msg:        "bar1",
 		keysValues: []interface{}{"a", 1},
 		expected: testLogrEntry{
-			severity:      errorLog,
+			severity:      severity.ErrorLog,
 			msg:           "bar1",
 			keysAndValues: []interface{}{"a", 1},
 			err:           testError,
@@ -1528,7 +1400,7 @@ func TestErrorSWithLogr(t *testing.T) {
 		msg:        "foo2",
 		keysValues: []interface{}{},
 		expected: testLogrEntry{
-			severity:      errorLog,
+			severity:      severity.ErrorLog,
 			msg:           "foo2",
 			keysAndValues: []interface{}{},
 			err:           nil,
@@ -1538,7 +1410,7 @@ func TestErrorSWithLogr(t *testing.T) {
 		msg:        "bar2",
 		keysValues: []interface{}{"a", 1},
 		expected: testLogrEntry{
-			severity:      errorLog,
+			severity:      severity.ErrorLog,
 			msg:           "bar2",
 			keysAndValues: []interface{}{"a", 1},
 			err:           nil,
@@ -1732,7 +1604,7 @@ type testLogr struct {
 }
 
 type testLogrEntry struct {
-	severity      severity
+	severity      severity.Severity
 	msg           string
 	keysAndValues []interface{}
 	err           error
@@ -1748,7 +1620,7 @@ func (l *testLogr) Info(level int, msg string, keysAndValues ...interface{}) {
 	l.mutex.Lock()
 	defer l.mutex.Unlock()
 	l.entries = append(l.entries, testLogrEntry{
-		severity:      infoLog,
+		severity:      severity.InfoLog,
 		msg:           msg,
 		keysAndValues: keysAndValues,
 	})
@@ -1758,7 +1630,7 @@ func (l *testLogr) Error(err error, msg string, keysAndValues ...interface{}) {
 	l.mutex.Lock()
 	defer l.mutex.Unlock()
 	l.entries = append(l.entries, testLogrEntry{
-		severity:      errorLog,
+		severity:      severity.ErrorLog,
 		msg:           msg,
 		keysAndValues: keysAndValues,
 		err:           err,
@@ -1803,7 +1675,7 @@ func (l *callDepthTestLogr) Info(level int, msg string, keysAndValues ...interfa
 	// test case.
 	_, file, line, _ := runtime.Caller(l.callDepth + 2)
 	l.entries = append(l.entries, testLogrEntry{
-		severity:      infoLog,
+		severity:      severity.InfoLog,
 		msg:           msg,
 		keysAndValues: append([]interface{}{file, line}, keysAndValues...),
 	})
@@ -1816,7 +1688,7 @@ func (l *callDepthTestLogr) Error(err error, msg string, keysAndValues ...interf
 	// test case.
 	_, file, line, _ := runtime.Caller(l.callDepth + 2)
 	l.entries = append(l.entries, testLogrEntry{
-		severity:      errorLog,
+		severity:      severity.ErrorLog,
 		msg:           msg,
 		keysAndValues: append([]interface{}{file, line}, keysAndValues...),
 		err:           err,
@@ -1879,13 +1751,13 @@ func TestKObjs(t *testing.T) {
 	}{
 		{
 			name: "test for KObjs function with KMetadata slice",
-			obj: []kMetadataMock{
+			obj: []test.KMetadataMock{
 				{
-					name: "kube-dns",
-					ns:   "kube-system",
+					Name: "kube-dns",
+					NS:   "kube-system",
 				},
 				{
-					name: "mi-conf",
+					Name: "mi-conf",
 				},
 				{},
 			},
@@ -1902,13 +1774,13 @@ func TestKObjs(t *testing.T) {
 		},
 		{
 			name: "test for KObjs function with KMetadata pointer slice",
-			obj: []*kMetadataMock{
+			obj: []*test.KMetadataMock{
 				{
-					name: "kube-dns",
-					ns:   "kube-system",
+					Name: "kube-dns",
+					NS:   "kube-system",
 				},
 				{
-					name: "mi-conf",
+					Name: "mi-conf",
 				},
 				nil,
 			},
