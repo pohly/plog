@@ -67,7 +67,9 @@ func InitKlog() {
 // later release.
 type OutputConfig struct {
 	// NewLogger is called to create a new logger. If nil, output via klog
-	// is tested. Support for -vmodule is optional.
+	// is tested. Support for -vmodule is optional.  ClearLogger is called
+	// after each test, therefore it is okay to user SetLogger without
+	// undoing that in the callback.
 	NewLogger func(out io.Writer, v int, vmodule string) logr.Logger
 
 	// AsBackend enables testing through klog and the logger set there with
@@ -187,10 +189,10 @@ func Output(t *testing.T, config OutputConfig) {
 		"odd WithValues": {
 			withValues: []interface{}{"keyWithoutValue"},
 			moreValues: []interface{}{"anotherKeyWithoutValue"},
-			text:       "test",
-			expectedOutput: `I output.go:<LINE>] "test" keyWithoutValue="(MISSING)"
-I output.go:<LINE>] "test" keyWithoutValue="(MISSING)" anotherKeyWithoutValue="(MISSING)"
-I output.go:<LINE>] "test" keyWithoutValue="(MISSING)"
+			text:       "odd WithValues",
+			expectedOutput: `I output.go:<LINE>] "odd WithValues" keyWithoutValue="(MISSING)"
+I output.go:<LINE>] "odd WithValues" keyWithoutValue="(MISSING)" anotherKeyWithoutValue="(MISSING)"
+I output.go:<LINE>] "odd WithValues" keyWithoutValue="(MISSING)"
 `,
 		},
 		"multiple WithValues": {
@@ -228,9 +230,9 @@ I output.go:<LINE>] "test" firstKey=1 secondKey=3
 `,
 		},
 		"handle odd-numbers of KVs": {
-			text:   "test",
+			text:   "odd arguments",
 			values: []interface{}{"akey", "avalue", "akey2"},
-			expectedOutput: `I output.go:<LINE>] "test" akey="avalue" akey2="(MISSING)"
+			expectedOutput: `I output.go:<LINE>] "odd arguments" akey="avalue" akey2="(MISSING)"
 `,
 		},
 		"html characters": {
@@ -247,9 +249,9 @@ I output.go:<LINE>] "test" firstKey=1 secondKey=3
 		},
 		"handle odd-numbers of KVs in both log values and Info args": {
 			withValues: []interface{}{"basekey1", "basevar1", "basekey2"},
-			text:       "test",
+			text:       "both odd",
 			values:     []interface{}{"akey", "avalue", "akey2"},
-			expectedOutput: `I output.go:<LINE>] "test" basekey1="basevar1" basekey2="(MISSING)" akey="avalue" akey2="(MISSING)"
+			expectedOutput: `I output.go:<LINE>] "both odd" basekey1="basevar1" basekey2="(MISSING)" akey="avalue" akey2="(MISSING)"
 `,
 		},
 		"KObj": {
@@ -289,6 +291,8 @@ I output.go:<LINE>] "test" firstKey=1 secondKey=3
 	}
 	for n, test := range tests {
 		t.Run(n, func(t *testing.T) {
+			defer klog.ClearLogger()
+
 			printWithLogger := func(logger logr.Logger) {
 				for _, name := range test.withNames {
 					logger = logger.WithName(name)
@@ -298,21 +302,21 @@ I output.go:<LINE>] "test" firstKey=1 secondKey=3
 				// the combination, then again the original logger.
 				// It must not have been modified. This produces
 				// three log entries.
-				logger = logger.WithValues(test.withValues...)
+				logger = logger.WithValues(test.withValues...) // <WITH-VALUES>
 				loggers := []logr.Logger{logger}
 				if test.moreValues != nil {
-					loggers = append(loggers, logger.WithValues(test.moreValues...), logger)
+					loggers = append(loggers, logger.WithValues(test.moreValues...), logger) // <WITH-VALUES-2>
 				}
 				if test.evenMoreValues != nil {
-					loggers = append(loggers, logger.WithValues(test.evenMoreValues...))
+					loggers = append(loggers, logger.WithValues(test.evenMoreValues...)) // <WITH-VALUES-3>
 				}
 				for _, logger := range loggers {
 					if test.withHelper {
-						loggerHelper(logger, test.text, test.values)
+						loggerHelper(logger, test.text, test.values) // <LINE>
 					} else if test.err != nil {
-						logger.Error(test.err, test.text, test.values...)
+						logger.Error(test.err, test.text, test.values...) // <LINE>
 					} else {
-						logger.V(test.v).Info(test.text, test.values...)
+						logger.V(test.v).Info(test.text, test.values...) // <LINE>
 					}
 				}
 			}
@@ -394,12 +398,17 @@ I output.go:<LINE>] "test" firstKey=1 secondKey=3
 				if repl, ok := config.ExpectedOutputMapping[expected]; ok {
 					expected = repl
 				}
+				expectedWithPlaceholder := expected
 				expected = strings.ReplaceAll(expected, "<LINE>", fmt.Sprintf("%d", callLine))
 				expected = strings.ReplaceAll(expected, "<WITH-VALUES>", fmt.Sprintf("%d", expectedLine-18))
 				expected = strings.ReplaceAll(expected, "<WITH-VALUES-2>", fmt.Sprintf("%d", expectedLine-15))
 				expected = strings.ReplaceAll(expected, "<WITH-VALUES-3>", fmt.Sprintf("%d", expectedLine-12))
 				if actual != expected {
-					t.Errorf("Output mismatch. Expected:\n%s\nActual:\n%s\n", expected, actual)
+					if expectedWithPlaceholder == test.expectedOutput {
+						t.Errorf("Output mismatch. Expected:\n%s\nActual:\n%s\n", expectedWithPlaceholder, actual)
+					} else {
+						t.Errorf("Output mismatch. klog:\n%s\nExpected:\n%s\nActual:\n%s\n", test.expectedOutput, expectedWithPlaceholder, actual)
+					}
 				}
 			}
 
@@ -414,7 +423,6 @@ I output.go:<LINE>] "test" firstKey=1 secondKey=3
 			if config.AsBackend {
 				testOutput(t, printWithKlogLine, func(buffer *bytes.Buffer) {
 					klog.SetLogger(config.NewLogger(buffer, 10, ""))
-					defer klog.ClearLogger()
 					printWithKlog()
 				})
 				return
@@ -645,9 +653,14 @@ I output.go:<LINE>] "test" firstKey=1 secondKey=3
 				if repl, ok := config.ExpectedOutputMapping[expected]; ok {
 					expected = repl
 				}
+				expectedWithPlaceholder := expected
 				expected = strings.ReplaceAll(expected, "<LINE>", fmt.Sprintf("%d", callLine))
 				if actual != expected {
-					t.Errorf("Output mismatch. Expected:\n%s\nActual:\n%s\n", expected, actual)
+					if expectedWithPlaceholder == test.output {
+						t.Errorf("Output mismatch. Expected:\n%s\nActual:\n%s\n", expectedWithPlaceholder, actual)
+					} else {
+						t.Errorf("Output mismatch. klog:\n%s\nExpected:\n%s\nActual:\n%s\n", test.output, expectedWithPlaceholder, actual)
+					}
 				}
 			})
 		}

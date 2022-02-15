@@ -122,13 +122,13 @@ func (l klogger) Info(level int, msg string, kvList ...interface{}) {
 		trimmed := serialize.TrimDuplicates(l.values, kvList)
 		fixedStr := flatten(trimmed[0]...)
 		userStr := flatten(trimmed[1]...)
-		klog.InfoDepth(l.callDepth+1, l.prefix, " ", msgStr, " ", fixedStr, " ", userStr)
+		klog.V(klog.Level(level)).InfoDepth(l.callDepth+1, l.prefix, " ", msgStr, " ", fixedStr, " ", userStr)
 	case FormatKlog:
 		trimmed := serialize.TrimDuplicates(l.values, kvList)
 		if l.prefix != "" {
 			msg = l.prefix + ": " + msg
 		}
-		klog.InfoSDepth(l.callDepth+1, msg, append(trimmed[0], trimmed[1]...)...)
+		klog.V(klog.Level(level)).InfoSDepth(l.callDepth+1, msg, append(trimmed[0], trimmed[1]...)...)
 	}
 }
 
