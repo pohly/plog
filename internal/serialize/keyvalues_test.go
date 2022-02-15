@@ -137,7 +137,7 @@ No whitespace.`,
 		},
 		{
 			keysValues: []interface{}{"point-1", point{100, 200}, "point-2", emptyPoint},
-			want:       " point-1=\"x=100, y=200\" point-2=\"nil\"",
+			want:       " point-1=\"x=100, y=200\" point-2=\"<panic: value method k8s.io/klog/v2/internal/serialize_test.point.String called using nil *point pointer>\"",
 		},
 	}
 
