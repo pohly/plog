@@ -116,6 +116,31 @@ I output.go:<LINE>] "odd WithValues" keyWithoutValue="(MISSING)"
 {"caller":"test/output.go:<LINE>","msg":"both odd","basekey1":"basevar1","v":0,"akey":"avalue"}
 `,
 
+		`I output.go:<LINE>] "marshaler nil" obj="<panic: value method k8s.io/klog/v2.ObjectRef.String called using nil *ObjectRef pointer>"
+`: `{"caller":"test/output.go:<LINE>","msg":"marshaler nil","v":0,"objError":"PANIC=value method k8s.io/klog/v2.ObjectRef.MarshalLog called using nil *ObjectRef pointer"}
+`,
+
+		// zap replaces a panic for a nil object with <nil>.
+		`E output.go:<LINE>] "error nil" err="<panic: runtime error: invalid memory address or nil pointer dereference>"
+`: `{"caller":"test/output.go:<LINE>","msg":"error nil","err":"<nil>"}
+`,
+
+		`I output.go:<LINE>] "stringer nil" stringer="<panic: runtime error: invalid memory address or nil pointer dereference>"
+`: `{"caller":"test/output.go:<LINE>","msg":"stringer nil","v":0,"stringer":"<nil>"}
+`,
+
+		`I output.go:<LINE>] "stringer panic" stringer="<panic: fake String panic>"
+`: `{"caller":"test/output.go:<LINE>","msg":"stringer panic","v":0,"stringerError":"PANIC=fake String panic"}
+`,
+
+		`E output.go:<LINE>] "error panic" err="<panic: fake Error panic>"
+`: `{"caller":"test/output.go:<LINE>","msg":"error panic","errError":"PANIC=fake Error panic"}
+`,
+
+		`I output.go:<LINE>] "marshaler panic" obj={}
+`: `{"caller":"test/output.go:<LINE>","msg":"marshaler panic","v":0,"objError":"PANIC=fake MarshalLog panic"}
+`,
+
 		// klog.Info
 		`I output.go:<LINE>] "helloworld\n"
 `: `{"caller":"test/output.go:<LINE>","msg":"helloworld\n","v":0}

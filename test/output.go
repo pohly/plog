@@ -288,6 +288,42 @@ I output.go:<LINE>] "test" firstKey=1 secondKey=3
 			expectedOutput: `E output.go:<LINE>] "test" err="whoops"
 `,
 		},
+		"Error() for nil": {
+			text: "error nil",
+			err:  (*customErrorJSON)(nil),
+			expectedOutput: `E output.go:<LINE>] "error nil" err="<panic: runtime error: invalid memory address or nil pointer dereference>"
+`,
+		},
+		"String() for nil": {
+			text:   "stringer nil",
+			values: []interface{}{"stringer", (*stringer)(nil)},
+			expectedOutput: `I output.go:<LINE>] "stringer nil" stringer="<panic: runtime error: invalid memory address or nil pointer dereference>"
+`,
+		},
+		"MarshalLog() for nil": {
+			text:   "marshaler nil",
+			values: []interface{}{"obj", (*klog.ObjectRef)(nil)},
+			expectedOutput: `I output.go:<LINE>] "marshaler nil" obj="<panic: value method k8s.io/klog/v2.ObjectRef.String called using nil *ObjectRef pointer>"
+`,
+		},
+		"Error() that panics": {
+			text: "error panic",
+			err:  faultyError{},
+			expectedOutput: `E output.go:<LINE>] "error panic" err="<panic: fake Error panic>"
+`,
+		},
+		"String() that panics": {
+			text:   "stringer panic",
+			values: []interface{}{"stringer", faultyStringer{}},
+			expectedOutput: `I output.go:<LINE>] "stringer panic" stringer="<panic: fake String panic>"
+`,
+		},
+		"MarshalLog() that panics": {
+			text:   "marshaler panic",
+			values: []interface{}{"obj", faultyMarshaler{}},
+			expectedOutput: `I output.go:<LINE>] "marshaler panic" obj={}
+`,
+		},
 	}
 	for n, test := range tests {
 		t.Run(n, func(t *testing.T) {
@@ -699,3 +735,41 @@ func (e *customErrorJSON) Error() string {
 func (e *customErrorJSON) MarshalJSON() ([]byte, error) {
 	return json.Marshal(strings.ToUpper(e.s))
 }
+
+type stringer struct {
+	s string
+}
+
+// String crashes when called for nil.
+func (s *stringer) String() string {
+	return s.s
+}
+
+var _ fmt.Stringer = &stringer{}
+
+type faultyStringer struct{}
+
+// String always panics.
+func (f faultyStringer) String() string {
+	panic("fake String panic")
+}
+
+var _ fmt.Stringer = faultyStringer{}
+
+type faultyMarshaler struct{}
+
+// MarshalLog always panics.
+func (f faultyMarshaler) MarshalLog() interface{} {
+	panic("fake MarshalLog panic")
+}
+
+var _ logr.Marshaler = faultyMarshaler{}
+
+type faultyError struct{}
+
+// Error always panics.
+func (f faultyError) Error() string {
+	panic("fake Error panic")
+}
+
+var _ error = faultyError{}

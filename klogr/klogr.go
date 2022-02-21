@@ -140,7 +140,7 @@ func (l klogger) Error(err error, msg string, kvList ...interface{}) {
 	msgStr := flatten("msg", msg)
 	var loggableErr interface{}
 	if err != nil {
-		loggableErr = err.Error()
+		loggableErr = serialize.ErrorToString(err)
 	}
 	switch l.format {
 	case FormatSerialize:

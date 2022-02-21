@@ -126,11 +126,11 @@ func KVListFormat(b *bytes.Buffer, keysAndValues ...interface{}) {
 		// (https://github.com/kubernetes/kubernetes/pull/106594#issuecomment-975526235).
 		switch v := v.(type) {
 		case fmt.Stringer:
-			writeStringValue(b, true, stringerToString(v))
+			writeStringValue(b, true, StringerToString(v))
 		case string:
 			writeStringValue(b, true, v)
 		case error:
-			writeStringValue(b, true, v.Error())
+			writeStringValue(b, true, ErrorToString(v))
 		case []byte:
 			// In https://github.com/kubernetes/klog/pull/237 it was decided
 			// to format byte slices with "%+q". The advantages of that are:
@@ -151,13 +151,27 @@ func KVListFormat(b *bytes.Buffer, keysAndValues ...interface{}) {
 	}
 }
 
-func stringerToString(s fmt.Stringer) (ret string) {
+// StringerToString converts a Stringer to a string,
+// handling panics if they occur.
+func StringerToString(s fmt.Stringer) (ret string) {
 	defer func() {
 		if err := recover(); err != nil {
-			ret = "nil"
+			ret = fmt.Sprintf("<panic: %s>", err)
 		}
 	}()
 	ret = s.String()
+	return
+}
+
+// ErrorToString converts an error to a string,
+// handling panics if they occur.
+func ErrorToString(err error) (ret string) {
+	defer func() {
+		if err := recover(); err != nil {
+			ret = fmt.Sprintf("<panic: %s>", err)
+		}
+	}()
+	ret = err.Error()
 	return
 }
 
