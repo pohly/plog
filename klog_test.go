@@ -39,6 +39,7 @@ import (
 	"k8s.io/klog/v2/internal/buffer"
 	"k8s.io/klog/v2/internal/severity"
 	"k8s.io/klog/v2/internal/test"
+	testingclock "k8s.io/utils/clock/testing"
 )
 
 // TODO: This test package should be refactored so that tests cannot
@@ -378,10 +379,11 @@ func TestSetOutputDataRace(t *testing.T) {
 	setFlags()
 	defer logging.swap(logging.newBuffers())
 	var wg sync.WaitGroup
+	var daemons []*flushDaemon
 	for i := 1; i <= 50; i++ {
-		go func() {
-			logging.flushDaemon()
-		}()
+		daemon := newFlushDaemon(time.Second, logging.lockAndFlushAll, nil)
+		daemon.run()
+		daemons = append(daemons, daemon)
 	}
 	for i := 1; i <= 50; i++ {
 		wg.Add(1)
@@ -391,9 +393,9 @@ func TestSetOutputDataRace(t *testing.T) {
 		}()
 	}
 	for i := 1; i <= 50; i++ {
-		go func() {
-			logging.flushDaemon()
-		}()
+		daemon := newFlushDaemon(time.Second, logging.lockAndFlushAll, nil)
+		daemon.run()
+		daemons = append(daemons, daemon)
 	}
 	for i := 1; i <= 50; i++ {
 		wg.Add(1)
@@ -403,11 +405,14 @@ func TestSetOutputDataRace(t *testing.T) {
 		}()
 	}
 	for i := 1; i <= 50; i++ {
-		go func() {
-			logging.flushDaemon()
-		}()
+		daemon := newFlushDaemon(time.Second, logging.lockAndFlushAll, nil)
+		daemon.run()
+		daemons = append(daemons, daemon)
 	}
 	wg.Wait()
+	for _, d := range daemons {
+		d.stop()
+	}
 }
 
 func TestLogToOutput(t *testing.T) {
@@ -1851,4 +1856,64 @@ func (s *structWithLock) addWithDefer() {
 	s.m.Lock()
 	defer s.m.Unlock()
 	s.n++
+}
+
+func TestFlushDaemon(t *testing.T) {
+	for sev := severity.InfoLog; sev < severity.FatalLog; sev++ {
+		flushed := make(chan struct{}, 1)
+		spyFunc := func() {
+			flushed <- struct{}{}
+		}
+		testClock := testingclock.NewFakeClock(time.Now())
+		testLog := loggingT{
+			flushD: newFlushDaemon(time.Second, spyFunc, testClock),
+		}
+
+		// Calling testLog will call createFile, which should start the daemon.
+		testLog.print(sev, nil, nil, "x")
+
+		if !testLog.flushD.isRunning() {
+			t.Error("expected flushD to be running")
+		}
+
+		timer := time.NewTimer(10 * time.Second)
+		defer timer.Stop()
+		testClock.Step(time.Second)
+		select {
+		case <-flushed:
+		case <-timer.C:
+			t.Fatal("flushDaemon didn't call flush function on tick")
+		}
+
+		timer = time.NewTimer(10 * time.Second)
+		defer timer.Stop()
+		testClock.Step(time.Second)
+		select {
+		case <-flushed:
+		case <-timer.C:
+			t.Fatal("flushDaemon didn't call flush function on second tick")
+		}
+
+		timer = time.NewTimer(10 * time.Second)
+		defer timer.Stop()
+		testLog.flushD.stop()
+		select {
+		case <-flushed:
+		case <-timer.C:
+			t.Fatal("flushDaemon didn't call flush function one last time on stop")
+		}
+	}
+}
+
+func TestStopFlushDaemon(t *testing.T) {
+	logging.flushD.stop()
+	logging.flushD = newFlushDaemon(time.Second, func() {}, nil)
+	logging.flushD.run()
+	if !logging.flushD.isRunning() {
+		t.Error("expected flushD to be running")
+	}
+	StopFlushDaemon()
+	if logging.flushD.isRunning() {
+		t.Error("expected flushD to be stopped")
+	}
 }

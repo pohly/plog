@@ -94,6 +94,7 @@ import (
 	"k8s.io/klog/v2/internal/buffer"
 	"k8s.io/klog/v2/internal/serialize"
 	"k8s.io/klog/v2/internal/severity"
+	"k8s.io/utils/clock"
 )
 
 // severityValue identifies the sort of log: info, warning etc. It also implements
@@ -380,7 +381,7 @@ type flushSyncWriter interface {
 	io.Writer
 }
 
-// init sets up the defaults and runs flushDaemon.
+// init sets up the defaults.
 func init() {
 	logging.stderrThreshold = severityValue{
 		Severity: severity.ErrorLog, // Default stderrThreshold is ERROR.
@@ -395,7 +396,7 @@ func init() {
 	logging.addDirHeader = false
 	logging.skipLogHeaders = false
 	logging.oneOutput = false
-	go logging.flushDaemon()
+	logging.flushD = newFlushDaemon(flushInterval, logging.lockAndFlushAll, nil)
 }
 
 // InitFlags is for explicitly initializing the flags.
@@ -447,6 +448,8 @@ type loggingT struct {
 	mu sync.Mutex
 	// file holds writer for each of the log types.
 	file [severity.NumSeverity]flushSyncWriter
+	// flushD holds a flushDaemon that frequently flushes log file buffers.
+	flushD *flushDaemon
 	// pcs is used in V to avoid an allocation when computing the caller's PC.
 	pcs [1]uintptr
 	// vmap is a cache of the V Level for each V() call site, identified by PC.
@@ -1022,6 +1025,7 @@ const bufferSize = 256 * 1024
 // createFiles creates all the log files for severity from sev down to infoLog.
 // l.mu is held.
 func (l *loggingT) createFiles(sev severity.Severity) error {
+	l.flushD.run()
 	now := time.Now()
 	// Files are created in decreasing severity order, so as soon as we find one
 	// has already been created, we can stop.
@@ -1042,10 +1046,86 @@ func (l *loggingT) createFiles(sev severity.Severity) error {
 const flushInterval = 5 * time.Second
 
 // flushDaemon periodically flushes the log file buffers.
-func (l *loggingT) flushDaemon() {
-	for range time.NewTicker(flushInterval).C {
-		l.lockAndFlushAll()
+type flushDaemon struct {
+	mu       sync.Mutex
+	clock    clock.WithTicker
+	interval time.Duration
+	flush    func()
+	stopC    chan struct{}
+	stopDone chan struct{}
+}
+
+// newFlushDaemon returns a new flushDaemon. If the passed clock is nil, a
+// clock.RealClock is used.
+func newFlushDaemon(interval time.Duration, flush func(), tickClock clock.WithTicker) *flushDaemon {
+	if tickClock == nil {
+		tickClock = clock.RealClock{}
 	}
+	return &flushDaemon{
+		interval: interval,
+		flush:    flush,
+		clock:    tickClock,
+	}
+}
+
+// run starts a goroutine that periodically calls the daemons flush function.
+// Calling run on an already running daemon will have no effect.
+func (f *flushDaemon) run() {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+
+	if f.stopC != nil { // daemon already running
+		return
+	}
+
+	f.stopC = make(chan struct{}, 1)
+	f.stopDone = make(chan struct{}, 1)
+
+	ticker := f.clock.NewTicker(f.interval)
+	go func() {
+		defer ticker.Stop()
+		defer func() { f.stopDone <- struct{}{} }()
+		for {
+			select {
+			case <-ticker.C():
+				f.flush()
+			case <-f.stopC:
+				f.flush()
+				return
+			}
+		}
+	}()
+}
+
+// stop stops the running flushDaemon and waits until the daemon has shut down.
+// Calling stop on a daemon that isn't running will have no effect.
+func (f *flushDaemon) stop() {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+
+	if f.stopC == nil { // daemon not running
+		return
+	}
+
+	f.stopC <- struct{}{}
+	<-f.stopDone
+
+	f.stopC = nil
+	f.stopDone = nil
+}
+
+// isRunning returns true if the flush daemon is running.
+func (f *flushDaemon) isRunning() bool {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	return f.stopC != nil
+}
+
+// StopFlushDaemon stops the flush daemon, if running.
+// This prevents klog from leaking goroutines on shutdown. After stopping
+// the daemon, you can still manually flush buffers by calling Flush().
+func StopFlushDaemon() {
+	logging.flushD.stop()
 }
 
 // lockAndFlushAll is like flushAll but locks l.mu first.
