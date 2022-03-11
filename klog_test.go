@@ -1506,6 +1506,7 @@ func TestCallDepthLogrInfoS(t *testing.T) {
 	logger.resetCallDepth()
 	l := logr.New(logger)
 	SetLogger(l)
+	defer ClearLogger()
 
 	// Add wrapper to ensure callDepthTestLogr +2 offset is correct.
 	logFunc := func() {
@@ -1528,6 +1529,7 @@ func TestCallDepthLogrErrorS(t *testing.T) {
 	logger.resetCallDepth()
 	l := logr.New(logger)
 	SetLogger(l)
+	defer ClearLogger()
 
 	// Add wrapper to ensure callDepthTestLogr +2 offset is correct.
 	logFunc := func() {
@@ -1550,6 +1552,7 @@ func TestCallDepthLogrGoLog(t *testing.T) {
 	logger.resetCallDepth()
 	l := logr.New(logger)
 	SetLogger(l)
+	defer ClearLogger()
 	CopyStandardLogTo("INFO")
 
 	// Add wrapper to ensure callDepthTestLogr +2 offset is correct.
