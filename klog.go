@@ -847,8 +847,8 @@ func (l *loggingT) output(s severity.Severity, log *logr.Logger, buf *buffer.Buf
 		if atomic.LoadUint32(&fatalNoStacks) > 0 {
 			l.mu.Unlock()
 			isLocked = false
-			timeoutFlush(10 * time.Second)
-			os.Exit(1)
+			timeoutFlush(ExitFlushTimeout)
+			OsExit(1)
 		}
 		// Dump all goroutine stacks before exiting.
 		trace := stacks(true)
@@ -865,31 +865,14 @@ func (l *loggingT) output(s severity.Severity, log *logr.Logger, buf *buffer.Buf
 		}
 		l.mu.Unlock()
 		isLocked = false
-		timeoutFlush(10 * time.Second)
-		os.Exit(255) // C++ uses -1, which is silly because it's anded(&) with 255 anyway.
+		timeoutFlush(ExitFlushTimeout)
+		OsExit(255) // C++ uses -1, which is silly because it's anded with 255 anyway.
 	}
 	l.bufferCache.PutBuffer(buf)
 
 	if stats := severityStats[s]; stats != nil {
 		atomic.AddInt64(&stats.lines, 1)
 		atomic.AddInt64(&stats.bytes, int64(len(data)))
-	}
-}
-
-// timeoutFlush calls Flush and returns when it completes or after timeout
-// elapses, whichever happens first.  This is needed because the hooks invoked
-// by Flush may deadlock when klog.Fatal is called from a hook that holds
-// a lock.
-func timeoutFlush(timeout time.Duration) {
-	done := make(chan bool, 1)
-	go func() {
-		Flush() // calls logging.lockAndFlushAll()
-		done <- true
-	}()
-	select {
-	case <-done:
-	case <-time.After(timeout):
-		fmt.Fprintln(os.Stderr, "klog: Flush took longer than", timeout)
 	}
 }
 
@@ -929,7 +912,7 @@ func (l *loggingT) exit(err error) {
 		return
 	}
 	l.flushAll()
-	os.Exit(2)
+	OsExit(2)
 }
 
 // syncBuffer joins a bufio.Writer to its underlying file, providing access to the
@@ -1518,7 +1501,7 @@ func ErrorSDepth(depth int, err error, msg string, keysAndValues ...interface{})
 }
 
 // Fatal logs to the FATAL, ERROR, WARNING, and INFO logs,
-// including a stack trace of all running goroutines, then calls os.Exit(255).
+// including a stack trace of all running goroutines, then calls OsExit(255).
 // Arguments are handled in the manner of fmt.Print; a newline is appended if missing.
 func Fatal(args ...interface{}) {
 	logging.print(severity.FatalLog, logging.logr, logging.filter, args...)
@@ -1531,7 +1514,7 @@ func FatalDepth(depth int, args ...interface{}) {
 }
 
 // Fatalln logs to the FATAL, ERROR, WARNING, and INFO logs,
-// including a stack trace of all running goroutines, then calls os.Exit(255).
+// including a stack trace of all running goroutines, then calls OsExit(255).
 // Arguments are handled in the manner of fmt.Println; a newline is always appended.
 func Fatalln(args ...interface{}) {
 	logging.println(severity.FatalLog, logging.logr, logging.filter, args...)
@@ -1544,7 +1527,7 @@ func FatallnDepth(depth int, args ...interface{}) {
 }
 
 // Fatalf logs to the FATAL, ERROR, WARNING, and INFO logs,
-// including a stack trace of all running goroutines, then calls os.Exit(255).
+// including a stack trace of all running goroutines, then calls OsExit(255).
 // Arguments are handled in the manner of fmt.Printf; a newline is appended if missing.
 func Fatalf(format string, args ...interface{}) {
 	logging.printf(severity.FatalLog, logging.logr, logging.filter, format, args...)
@@ -1560,7 +1543,7 @@ func FatalfDepth(depth int, format string, args ...interface{}) {
 // It allows Exit and relatives to use the Fatal logs.
 var fatalNoStacks uint32
 
-// Exit logs to the FATAL, ERROR, WARNING, and INFO logs, then calls os.Exit(1).
+// Exit logs to the FATAL, ERROR, WARNING, and INFO logs, then calls OsExit(1).
 // Arguments are handled in the manner of fmt.Print; a newline is appended if missing.
 func Exit(args ...interface{}) {
 	atomic.StoreUint32(&fatalNoStacks, 1)
@@ -1574,7 +1557,7 @@ func ExitDepth(depth int, args ...interface{}) {
 	logging.printDepth(severity.FatalLog, logging.logr, logging.filter, depth, args...)
 }
 
-// Exitln logs to the FATAL, ERROR, WARNING, and INFO logs, then calls os.Exit(1).
+// Exitln logs to the FATAL, ERROR, WARNING, and INFO logs, then calls OsExit(1).
 func Exitln(args ...interface{}) {
 	atomic.StoreUint32(&fatalNoStacks, 1)
 	logging.println(severity.FatalLog, logging.logr, logging.filter, args...)
@@ -1587,7 +1570,7 @@ func ExitlnDepth(depth int, args ...interface{}) {
 	logging.printlnDepth(severity.FatalLog, logging.logr, logging.filter, depth, args...)
 }
 
-// Exitf logs to the FATAL, ERROR, WARNING, and INFO logs, then calls os.Exit(1).
+// Exitf logs to the FATAL, ERROR, WARNING, and INFO logs, then calls OsExit(1).
 // Arguments are handled in the manner of fmt.Printf; a newline is appended if missing.
 func Exitf(format string, args ...interface{}) {
 	atomic.StoreUint32(&fatalNoStacks, 1)
