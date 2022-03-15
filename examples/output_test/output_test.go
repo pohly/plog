@@ -85,7 +85,7 @@ func TestKlogrOutput(t *testing.T) {
 	})
 }
 
-// TestKlogrStackText tests klogr -> klog -> text logger.
+// TestKlogrStackText tests klogr.klogr -> klog -> text logger.
 func TestKlogrStackText(t *testing.T) {
 	newLogger := func(out io.Writer, v int, vmodule string) logr.Logger {
 		// Backend: text output.
@@ -104,7 +104,7 @@ func TestKlogrStackText(t *testing.T) {
 	test.Output(t, test.OutputConfig{NewLogger: newLogger, SupportsVModule: true})
 }
 
-// TestKlogrStackKlogr tests klogr -> klog -> zapr.
+// TestKlogrStackKlogr tests klogr.klogr -> klog -> zapr.
 //
 // This exposes whether verbosity is passed through correctly
 // (https://github.com/kubernetes/klog/issues/294) because klogr logging
@@ -132,6 +132,57 @@ func TestKlogrStackZapr(t *testing.T) {
 
 		// Frontend: klogr.
 		return klogr.NewWithOptions(klogr.WithFormat(klogr.FormatKlog))
+	}
+	test.Output(t, test.OutputConfig{NewLogger: newLogger, ExpectedOutputMapping: mapping})
+}
+
+// TestKlogrInternalStackText tests klog.klogr (the simplified version used for contextual logging) -> klog -> text logger.
+func TestKlogrInternalStackText(t *testing.T) {
+	newLogger := func(out io.Writer, v int, vmodule string) logr.Logger {
+		// Backend: text output.
+		config := textlogger.NewConfig(
+			textlogger.Verbosity(v),
+			textlogger.Output(out),
+		)
+		if err := config.VModule().Set(vmodule); err != nil {
+			panic(err)
+		}
+		klog.SetLogger(textlogger.NewLogger(config))
+
+		// Frontend: internal klogr.
+		return klog.NewKlogr()
+	}
+	test.Output(t, test.OutputConfig{NewLogger: newLogger, SupportsVModule: true})
+}
+
+// TestKlogrInternalStackKlogr tests klog.klogr (the simplified version used for contextual logging) -> klog -> zapr.
+//
+// This exposes whether verbosity is passed through correctly
+// (https://github.com/kubernetes/klog/issues/294) because klogr logging
+// records that.
+func TestKlogrInternalStackZapr(t *testing.T) {
+	mapping := test.ZaprOutputMappingIndirect()
+
+	// klogr doesn't warn about invalid KVs and just inserts
+	// "(MISSING)".
+	for key, value := range map[string]string{
+		`I output.go:<LINE>] "odd arguments" akey="avalue" akey2="(MISSING)"
+`: `{"caller":"test/output.go:<LINE>","msg":"odd arguments","v":0,"akey":"avalue","akey2":"(MISSING)"}
+`,
+
+		`I output.go:<LINE>] "both odd" basekey1="basevar1" basekey2="(MISSING)" akey="avalue" akey2="(MISSING)"
+`: `{"caller":"test/output.go:<LINE>","msg":"both odd","v":0,"basekey1":"basevar1","basekey2":"(MISSING)","akey":"avalue","akey2":"(MISSING)"}
+`,
+	} {
+		mapping[key] = value
+	}
+
+	newLogger := func(out io.Writer, v int, vmodule string) logr.Logger {
+		// Backend: zapr as configured in k8s.io/component-base/logs/json.
+		klog.SetLogger(newZaprLogger(out, v))
+
+		// Frontend: internal klogr.
+		return klog.NewKlogr()
 	}
 	test.Output(t, test.OutputConfig{NewLogger: newLogger, ExpectedOutputMapping: mapping})
 }
