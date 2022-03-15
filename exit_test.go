@@ -24,10 +24,13 @@ import (
 
 func ExampleFlushAndExit() {
 	// Set up klog so that we can test it below.
+
 	var fs flag.FlagSet
 	klog.InitFlags(&fs)
 	fs.Set("skip_headers", "true")
 	defer flag.Set("skip_headers", "false")
+	fs.Set("logtostderr", "false")
+	defer fs.Set("logtostderr", "true")
 	klog.SetOutput(os.Stdout)
 	defer klog.SetOutput(nil)
 	klog.OsExit = func(exitCode int) {
