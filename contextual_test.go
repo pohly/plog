@@ -24,6 +24,8 @@ import (
 )
 
 func ExampleSetLogger() {
+	defer klog.ClearLogger()
+
 	// Logger is only used as backend, Background() returns klogr.
 	klog.SetLogger(logr.Discard())
 	fmt.Printf("logger after SetLogger: %T\n", klog.Background().GetSink())
