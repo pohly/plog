@@ -37,9 +37,9 @@ import (
 	"github.com/go-logr/logr"
 
 	"k8s.io/klog/v2/internal/buffer"
+	testingclock "k8s.io/klog/v2/internal/clock/testing"
 	"k8s.io/klog/v2/internal/severity"
 	"k8s.io/klog/v2/internal/test"
-	testingclock "k8s.io/utils/clock/testing"
 )
 
 // TODO: This test package should be refactored so that tests cannot
