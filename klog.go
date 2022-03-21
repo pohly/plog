@@ -1077,9 +1077,9 @@ func (f *flushDaemon) isRunning() bool {
 	return f.stopC != nil
 }
 
-// StopFlushDaemon stops the flush daemon, if running.
+// StopFlushDaemon stops the flush daemon, if running, and flushes once.
 // This prevents klog from leaking goroutines on shutdown. After stopping
-// the daemon, you can still manually flush buffers by calling Flush().
+// the daemon, you can still manually flush buffers again by calling Flush().
 func StopFlushDaemon() {
 	logging.flushD.stop()
 }
