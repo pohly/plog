@@ -631,7 +631,7 @@ func BenchmarkHeaderWithDir(b *testing.B) {
 }
 
 // Ensure that benchmarks have side effects to avoid compiler optimization
-var result ObjectRef
+var result interface{}
 var enabled bool
 
 func BenchmarkV(b *testing.B) {
@@ -657,6 +657,29 @@ func BenchmarkKObj(b *testing.B) {
 		r = KObj(&a)
 	}
 	result = r
+}
+
+// BenchmarkKObjs measures the (pretty typical) case
+// where KObjs is used in a V(5).InfoS call that never
+// emits a log entry because verbosity is lower than 5.
+// For performance when the result of KObjs gets formatted,
+// see examples/benchmarks.
+func BenchmarkKObjs(b *testing.B) {
+	for length := 0; length <= 100; length += 10 {
+		b.Run(fmt.Sprintf("%d", length), func(b *testing.B) {
+			arg := make([]interface{}, length)
+			for i := 0; i < length; i++ {
+				arg[i] = test.KMetadataMock{Name: "a", NS: "a"}
+			}
+			b.ResetTimer()
+
+			var r interface{}
+			for i := 0; i < b.N; i++ {
+				r = KObjs(arg)
+			}
+			result = r
+		})
+	}
 }
 
 func BenchmarkLogs(b *testing.B) {
