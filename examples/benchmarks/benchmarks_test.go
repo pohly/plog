@@ -75,7 +75,7 @@ func BenchmarkOutput(b *testing.B) {
 		tests = append(tests, testcase{
 			name: fmt.Sprintf("objects/%d", length),
 			generate: func() interface{} {
-				return klog.KObjs(arg)
+				return klog.KObjSlice(arg)
 			},
 		})
 	}
