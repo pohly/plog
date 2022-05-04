@@ -41,6 +41,10 @@
 //
 //	-logtostderr=true
 //		Logs are written to standard error instead of to files.
+//              This shortcuts most of the usual output routing:
+//              -alsologtostderr, -stderrthreshold and -log_dir have no
+//              effect and output redirection at runtime with SetOutput is
+//              ignored.
 //	-alsologtostderr=false
 //		Logs are written to standard error as well as to files.
 //	-stderrthreshold=ERROR
@@ -404,19 +408,19 @@ func InitFlags(flagset *flag.FlagSet) {
 		flagset = flag.CommandLine
 	}
 
-	flagset.StringVar(&logging.logDir, "log_dir", logging.logDir, "If non-empty, write log files in this directory")
-	flagset.StringVar(&logging.logFile, "log_file", logging.logFile, "If non-empty, use this log file")
+	flagset.StringVar(&logging.logDir, "log_dir", logging.logDir, "If non-empty, write log files in this directory (no effect when -logtostderr=true)")
+	flagset.StringVar(&logging.logFile, "log_file", logging.logFile, "If non-empty, use this log file (no effect when -logtostderr=true)")
 	flagset.Uint64Var(&logging.logFileMaxSizeMB, "log_file_max_size", logging.logFileMaxSizeMB,
-		"Defines the maximum size a log file can grow to. Unit is megabytes. "+
+		"Defines the maximum size a log file can grow to (no effect when -logtostderr=true). Unit is megabytes. "+
 			"If the value is 0, the maximum file size is unlimited.")
 	flagset.BoolVar(&logging.toStderr, "logtostderr", logging.toStderr, "log to standard error instead of files")
-	flagset.BoolVar(&logging.alsoToStderr, "alsologtostderr", logging.alsoToStderr, "log to standard error as well as files")
+	flagset.BoolVar(&logging.alsoToStderr, "alsologtostderr", logging.alsoToStderr, "log to standard error as well as files (no effect when -logtostderr=true)")
 	flagset.Var(&logging.verbosity, "v", "number for the log level verbosity")
 	flagset.BoolVar(&logging.addDirHeader, "add_dir_header", logging.addDirHeader, "If true, adds the file directory to the header of the log messages")
 	flagset.BoolVar(&logging.skipHeaders, "skip_headers", logging.skipHeaders, "If true, avoid header prefixes in the log messages")
-	flagset.BoolVar(&logging.oneOutput, "one_output", logging.oneOutput, "If true, only write logs to their native severity level (vs also writing to each lower severity level)")
-	flagset.BoolVar(&logging.skipLogHeaders, "skip_log_headers", logging.skipLogHeaders, "If true, avoid headers when opening log files")
-	flagset.Var(&logging.stderrThreshold, "stderrthreshold", "logs at or above this threshold go to stderr")
+	flagset.BoolVar(&logging.oneOutput, "one_output", logging.oneOutput, "If true, only write logs to their native severity level (vs also writing to each lower severity level; no effect when -logtostderr=true)")
+	flagset.BoolVar(&logging.skipLogHeaders, "skip_log_headers", logging.skipLogHeaders, "If true, avoid headers when opening log files (no effect when -logtostderr=true)")
+	flagset.Var(&logging.stderrThreshold, "stderrthreshold", "logs at or above this threshold go to stderr when writing to files and stderr (no effect when -logtostderr=true or -alsologtostderr=false)")
 	flagset.Var(&logging.vmodule, "vmodule", "comma-separated list of pattern=N settings for file-filtered logging")
 	flagset.Var(&logging.traceLocation, "log_backtrace_at", "when logging hits line file:N, emit a stack trace")
 }
