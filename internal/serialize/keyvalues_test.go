@@ -19,6 +19,7 @@ package serialize_test
 import (
 	"bytes"
 	"fmt"
+	"reflect"
 	"testing"
 	"time"
 
@@ -147,5 +148,159 @@ No whitespace.`,
 		if b.String() != d.want {
 			t.Errorf("KVListFormat error:\n got:\n\t%s\nwant:\t%s", b.String(), d.want)
 		}
+	}
+}
+
+func TestDuplicates(t *testing.T) {
+	for name, test := range map[string]struct {
+		first, second   []interface{}
+		expectedTrimmed [][]interface{}
+	}{
+		"empty": {
+			expectedTrimmed: [][]interface{}{{}, {}},
+		},
+		"no-duplicates": {
+			first:  makeKV("a", 3),
+			second: makeKV("b", 3),
+			expectedTrimmed: [][]interface{}{
+				makeKV("a", 3),
+				makeKV("b", 3),
+			},
+		},
+		"all-duplicates": {
+			first:  makeKV("a", 3),
+			second: makeKV("a", 3),
+			expectedTrimmed: [][]interface{}{
+				{},
+				makeKV("a", 3),
+			},
+		},
+		"start-duplicate": {
+			first:  append([]interface{}{"x", 1}, makeKV("a", 3)...),
+			second: append([]interface{}{"x", 2}, makeKV("b", 3)...),
+			expectedTrimmed: [][]interface{}{
+				makeKV("a", 3),
+				append([]interface{}{"x", 2}, makeKV("b", 3)...),
+			},
+		},
+		"subset-first": {
+			first:  append([]interface{}{"x", 1}, makeKV("a", 3)...),
+			second: append([]interface{}{"x", 2}, makeKV("a", 3)...),
+			expectedTrimmed: [][]interface{}{
+				{},
+				append([]interface{}{"x", 2}, makeKV("a", 3)...),
+			},
+		},
+		"subset-second": {
+			first:  append([]interface{}{"x", 1}, makeKV("a", 1)...),
+			second: append([]interface{}{"x", 2}, makeKV("b", 2)...),
+			expectedTrimmed: [][]interface{}{
+				makeKV("a", 1),
+				append([]interface{}{"x", 2}, makeKV("b", 2)...),
+			},
+		},
+		"end-duplicate": {
+			first:  append(makeKV("a", 3), "x", 1),
+			second: append(makeKV("b", 3), "x", 2),
+			expectedTrimmed: [][]interface{}{
+				makeKV("a", 3),
+				append(makeKV("b", 3), "x", 2),
+			},
+		},
+		"middle-duplicate": {
+			first:  []interface{}{"a-0", 0, "x", 1, "a-1", 2},
+			second: []interface{}{"b-0", 0, "x", 2, "b-1", 2},
+			expectedTrimmed: [][]interface{}{
+				{"a-0", 0, "a-1", 2},
+				{"b-0", 0, "x", 2, "b-1", 2},
+			},
+		},
+		"internal-duplicates": {
+			first:  []interface{}{"a", 0, "x", 1, "a", 2},
+			second: []interface{}{"b", 0, "x", 2, "b", 2},
+			expectedTrimmed: [][]interface{}{
+				{"a", 2},
+				{"x", 2, "b", 2},
+			},
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			actual := serialize.TrimDuplicates(test.first, test.second)
+			expectEqual(t, "trimmed key/value pairs", test.expectedTrimmed, actual)
+		})
+	}
+}
+
+// BenchmarkTrimDuplicates checks performance when TrimDuplicates is called with two slices.
+// In practice that is how the function is used.
+func BenchmarkTrimDuplicates(b *testing.B) {
+	for firstLength := 0; firstLength < 10; firstLength++ {
+		firstA := makeKV("a", firstLength)
+		for secondLength := 0; secondLength < 10; secondLength++ {
+			secondA := makeKV("a", secondLength)
+			secondB := makeKV("b", secondLength)
+			b.Run(fmt.Sprintf("%dx%d", firstLength, secondLength), func(b *testing.B) {
+				// This is the most common case: all key/value pairs are kept.
+				b.Run("no-duplicates", func(b *testing.B) {
+					expected := [][]interface{}{firstA, secondB}
+					benchTrimDuplicates(b, expected, firstA, secondB)
+				})
+
+				// Fairly unlikely...
+				b.Run("all-duplicates", func(b *testing.B) {
+					expected := [][]interface{}{{}, secondA}
+					if firstLength > secondLength {
+						expected[0] = append(expected[0], firstA[secondLength*2:]...)
+					}
+					benchTrimDuplicates(b, expected, firstA, secondA)
+				})
+
+				// First entry is the same.
+				b.Run("start-duplicate", func(b *testing.B) {
+					first := []interface{}{"x", 1}
+					first = append(first, firstA...)
+					second := []interface{}{"x", 1}
+					second = append(second, secondB...)
+					expected := [][]interface{}{firstA, second}
+					benchTrimDuplicates(b, expected, first, second)
+				})
+
+				// Last entry is the same.
+				b.Run("end-duplicate", func(b *testing.B) {
+					first := firstA[:]
+					first = append(first, "x", 1)
+					second := secondB[:]
+					second = append(second, "x", 1)
+					expected := [][]interface{}{firstA, second}
+					benchTrimDuplicates(b, expected, first, second)
+				})
+			})
+		}
+	}
+}
+
+func makeKV(prefix string, length int) []interface{} {
+	if length == 0 {
+		return []interface{}{}
+	}
+	kv := make([]interface{}, 0, length*2)
+	for i := 0; i < length; i++ {
+		kv = append(kv, fmt.Sprintf("%s-%d", prefix, i), i)
+	}
+	return kv
+}
+
+func benchTrimDuplicates(b *testing.B, expected interface{}, first, second []interface{}) {
+	actual := serialize.TrimDuplicates(first, second)
+	expectEqual(b, "trimmed key/value pairs", expected, actual)
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		serialize.TrimDuplicates(first, second)
+	}
+}
+
+func expectEqual(tb testing.TB, what string, expected, actual interface{}) {
+	if !reflect.DeepEqual(expected, actual) {
+		tb.Fatalf("Did not get correct %s. Expected:\n    %v\nActual:\n    %v", what, expected, actual)
 	}
 }
