@@ -438,8 +438,20 @@ func Flush() {
 	logging.lockAndFlushAll()
 }
 
-// loggingT collects all the global state of the logging setup.
-type loggingT struct {
+// settings collects global settings.
+type settings struct {
+	// contextualLoggingEnabled controls whether contextual logging is
+	// active. Disabling it may have some small performance benefit.
+	contextualLoggingEnabled bool
+
+	// logger is the global Logger chosen by users of klog, nil if
+	// none is available.
+	logger *Logger
+
+	// loggerOptions contains the options that were supplied for
+	// globalLogger.
+	loggerOptions loggerOptions
+
 	// Boolean flags. Not handled atomically because the flag.Value interface
 	// does not let us avoid the =true, and that shorthand is necessary for
 	// compatibility. TODO: does this matter enough to fix? Seems unlikely.
@@ -449,26 +461,14 @@ type loggingT struct {
 	// Level flag. Handled atomically.
 	stderrThreshold severityValue // The -stderrthreshold flag.
 
-	// bufferCache maintains the free list. It uses its own mutex
-	// so buffers can be grabbed and printed to without holding the main lock,
-	// for better parallelization.
-	bufferCache buffer.Buffers
+	// Access to all of the following fields must be protected via a mutex.
 
-	// mu protects the remaining elements of this structure and is
-	// used to synchronize logging.
-	mu sync.Mutex
 	// file holds writer for each of the log types.
 	file [severity.NumSeverity]flushSyncWriter
-	// flushD holds a flushDaemon that frequently flushes log file buffers.
-	flushD *flushDaemon
 	// flushInterval is the interval for periodic flushing. If zero,
 	// the global default will be used.
 	flushInterval time.Duration
-	// pcs is used in V to avoid an allocation when computing the caller's PC.
-	pcs [1]uintptr
-	// vmap is a cache of the V Level for each V() call site, identified by PC.
-	// It is wiped whenever the vmodule flag changes state.
-	vmap map[uintptr]Level
+
 	// filterLength stores the length of the vmodule filter chain. If greater
 	// than zero, it means vmodule is enabled. It may be read safely
 	// using sync.LoadInt32, but is only modified under mu.
@@ -508,6 +508,43 @@ type loggingT struct {
 	filter LogFilter
 }
 
+// deepCopy creates a copy that doesn't share anything with the original
+// instance.
+func (s settings) deepCopy() settings {
+	// vmodule is a slice and would be shared, so we have copy it.
+	filter := make([]modulePat, len(s.vmodule.filter))
+	for i := range s.vmodule.filter {
+		filter[i] = s.vmodule.filter[i]
+	}
+	s.vmodule.filter = filter
+
+	return s
+}
+
+// loggingT collects all the global state of the logging setup.
+type loggingT struct {
+	settings
+
+	// bufferCache maintains the free list. It uses its own mutex
+	// so buffers can be grabbed and printed to without holding the main lock,
+	// for better parallelization.
+	bufferCache buffer.Buffers
+
+	// flushD holds a flushDaemon that frequently flushes log file buffers.
+	// Uses its own mutex.
+	flushD *flushDaemon
+
+	// mu protects the remaining elements of this structure and the fields
+	// in settingsT which need a mutex lock.
+	mu sync.Mutex
+
+	// pcs is used in V to avoid an allocation when computing the caller's PC.
+	pcs [1]uintptr
+	// vmap is a cache of the V Level for each V() call site, identified by PC.
+	// It is wiped whenever the vmodule flag changes state.
+	vmap map[uintptr]Level
+}
+
 var logging loggingT
 
 // setVState sets a consistent state for V logging.
@@ -538,29 +575,8 @@ func CaptureState() State {
 	logging.mu.Lock()
 	defer logging.mu.Unlock()
 	return &state{
-		// We cannot simply copy the entire struct because
-		// it contains a mutex which cannot be copied.
-		loggingT: loggingT{
-			toStderr:         logging.toStderr,
-			alsoToStderr:     logging.alsoToStderr,
-			stderrThreshold:  logging.stderrThreshold,
-			file:             logging.file,
-			flushInterval:    logging.flushInterval,
-			traceLocation:    logging.traceLocation,
-			verbosity:        logging.verbosity,
-			logDir:           logging.logDir,
-			logFile:          logging.logFile,
-			logFileMaxSizeMB: logging.logFileMaxSizeMB,
-			skipHeaders:      logging.skipHeaders,
-			skipLogHeaders:   logging.skipLogHeaders,
-			addDirHeader:     logging.addDirHeader,
-			oneOutput:        logging.oneOutput,
-			filter:           logging.filter,
-		},
-		logger:        globalLogger,
+		settings:      logging.settings.deepCopy(),
 		flushDRunning: logging.flushD.isRunning(),
-		moduleSpec:    logging.vmodule.serialize(),
-		loggerOptions: globalLoggerOptions,
 		maxSize:       MaxSize,
 	}
 }
@@ -574,12 +590,9 @@ type State interface {
 }
 
 type state struct {
-	loggingT
+	settings
 
-	logger        *Logger
-	loggerOptions loggerOptions
 	flushDRunning bool
-	moduleSpec    string
 	maxSize       uint64
 }
 
@@ -600,25 +613,8 @@ func (s *state) Restore() {
 	logging.mu.Lock()
 	defer logging.mu.Unlock()
 
-	logging.toStderr = s.toStderr
-	logging.alsoToStderr = s.alsoToStderr
-	logging.stderrThreshold = s.stderrThreshold
-	logging.file = s.file
-	logging.flushInterval = s.flushInterval
-	logging.traceLocation = s.traceLocation
-	logging.verbosity = s.verbosity
-	logging.logDir = s.logDir
-	logging.logFile = s.logFile
-	logging.logFileMaxSizeMB = s.logFileMaxSizeMB
-	logging.skipHeaders = s.skipHeaders
-	logging.skipLogHeaders = s.skipLogHeaders
-	logging.addDirHeader = s.addDirHeader
-	logging.oneOutput = s.oneOutput
-	logging.filter = s.filter
-	filter, _ := parseModuleSpec(s.moduleSpec)
-	logging.setVState(s.verbosity, filter, true)
-	globalLogger = s.logger
-	globalLoggerOptions = s.loggerOptions
+	logging.settings = s.settings
+	logging.setVState(s.verbosity, s.vmodule.filter, true)
 	MaxSize = s.maxSize
 }
 
@@ -790,7 +786,7 @@ func (l *loggingT) printS(err error, s severity.Severity, depth int, msg string,
 		serialize.KVListFormat(&b.Buffer, "err", err)
 	}
 	serialize.KVListFormat(&b.Buffer, keysAndValues...)
-	l.printDepth(s, globalLogger, nil, depth+1, &b.Buffer)
+	l.printDepth(s, logging.logger, nil, depth+1, &b.Buffer)
 	// Make the buffer available for reuse.
 	l.bufferCache.PutBuffer(b)
 }
@@ -867,7 +863,7 @@ func (l *loggingT) output(s severity.Severity, log *logr.Logger, buf *buffer.Buf
 		// TODO: set 'severity' and caller information as structured log info
 		// keysAndValues := []interface{}{"severity", severityName[s], "file", file, "line", line}
 		if s == severity.ErrorLog {
-			globalLogger.WithCallDepth(depth+3).Error(nil, string(data))
+			logging.logger.WithCallDepth(depth+3).Error(nil, string(data))
 		} else {
 			log.WithCallDepth(depth + 3).Info(string(data))
 		}
@@ -1211,8 +1207,8 @@ func (l *loggingT) flushAll() {
 			file.Sync()  // ignore error
 		}
 	}
-	if globalLoggerOptions.flush != nil {
-		globalLoggerOptions.flush()
+	if logging.loggerOptions.flush != nil {
+		logging.loggerOptions.flush()
 	}
 }
 
@@ -1260,7 +1256,7 @@ func (lb logBridge) Write(b []byte) (n int, err error) {
 	}
 	// printWithFileLine with alsoToStderr=true, so standard log messages
 	// always appear on standard error.
-	logging.printWithFileLine(severity.Severity(lb), globalLogger, logging.filter, file, line, true, text)
+	logging.printWithFileLine(severity.Severity(lb), logging.logger, logging.filter, file, line, true, text)
 	return len(b), nil
 }
 
@@ -1298,10 +1294,10 @@ type Verbose struct {
 }
 
 func newVerbose(level Level, b bool) Verbose {
-	if globalLogger == nil {
+	if logging.logger == nil {
 		return Verbose{b, nil}
 	}
-	v := globalLogger.V(int(level))
+	v := logging.logger.V(int(level))
 	return Verbose{b, &v}
 }
 
@@ -1420,7 +1416,7 @@ func (v Verbose) InfoS(msg string, keysAndValues ...interface{}) {
 // InfoSDepth acts as InfoS but uses depth to determine which call frame to log.
 // InfoSDepth(0, "msg") is the same as InfoS("msg").
 func InfoSDepth(depth int, msg string, keysAndValues ...interface{}) {
-	logging.infoS(globalLogger, logging.filter, depth, msg, keysAndValues...)
+	logging.infoS(logging.logger, logging.filter, depth, msg, keysAndValues...)
 }
 
 // InfoSDepth is equivalent to the global InfoSDepth function, guarded by the value of v.
@@ -1449,37 +1445,37 @@ func (v Verbose) ErrorS(err error, msg string, keysAndValues ...interface{}) {
 // Info logs to the INFO log.
 // Arguments are handled in the manner of fmt.Print; a newline is appended if missing.
 func Info(args ...interface{}) {
-	logging.print(severity.InfoLog, globalLogger, logging.filter, args...)
+	logging.print(severity.InfoLog, logging.logger, logging.filter, args...)
 }
 
 // InfoDepth acts as Info but uses depth to determine which call frame to log.
 // InfoDepth(0, "msg") is the same as Info("msg").
 func InfoDepth(depth int, args ...interface{}) {
-	logging.printDepth(severity.InfoLog, globalLogger, logging.filter, depth, args...)
+	logging.printDepth(severity.InfoLog, logging.logger, logging.filter, depth, args...)
 }
 
 // Infoln logs to the INFO log.
 // Arguments are handled in the manner of fmt.Println; a newline is always appended.
 func Infoln(args ...interface{}) {
-	logging.println(severity.InfoLog, globalLogger, logging.filter, args...)
+	logging.println(severity.InfoLog, logging.logger, logging.filter, args...)
 }
 
 // InfolnDepth acts as Infoln but uses depth to determine which call frame to log.
 // InfolnDepth(0, "msg") is the same as Infoln("msg").
 func InfolnDepth(depth int, args ...interface{}) {
-	logging.printlnDepth(severity.InfoLog, globalLogger, logging.filter, depth, args...)
+	logging.printlnDepth(severity.InfoLog, logging.logger, logging.filter, depth, args...)
 }
 
 // Infof logs to the INFO log.
 // Arguments are handled in the manner of fmt.Printf; a newline is appended if missing.
 func Infof(format string, args ...interface{}) {
-	logging.printf(severity.InfoLog, globalLogger, logging.filter, format, args...)
+	logging.printf(severity.InfoLog, logging.logger, logging.filter, format, args...)
 }
 
 // InfofDepth acts as Infof but uses depth to determine which call frame to log.
 // InfofDepth(0, "msg", args...) is the same as Infof("msg", args...).
 func InfofDepth(depth int, format string, args ...interface{}) {
-	logging.printfDepth(severity.InfoLog, globalLogger, logging.filter, depth, format, args...)
+	logging.printfDepth(severity.InfoLog, logging.logger, logging.filter, depth, format, args...)
 }
 
 // InfoS structured logs to the INFO log.
@@ -1491,79 +1487,79 @@ func InfofDepth(depth int, format string, args ...interface{}) {
 // output:
 // >> I1025 00:15:15.525108       1 controller_utils.go:116] "Pod status updated" pod="kubedns" status="ready"
 func InfoS(msg string, keysAndValues ...interface{}) {
-	logging.infoS(globalLogger, logging.filter, 0, msg, keysAndValues...)
+	logging.infoS(logging.logger, logging.filter, 0, msg, keysAndValues...)
 }
 
 // Warning logs to the WARNING and INFO logs.
 // Arguments are handled in the manner of fmt.Print; a newline is appended if missing.
 func Warning(args ...interface{}) {
-	logging.print(severity.WarningLog, globalLogger, logging.filter, args...)
+	logging.print(severity.WarningLog, logging.logger, logging.filter, args...)
 }
 
 // WarningDepth acts as Warning but uses depth to determine which call frame to log.
 // WarningDepth(0, "msg") is the same as Warning("msg").
 func WarningDepth(depth int, args ...interface{}) {
-	logging.printDepth(severity.WarningLog, globalLogger, logging.filter, depth, args...)
+	logging.printDepth(severity.WarningLog, logging.logger, logging.filter, depth, args...)
 }
 
 // Warningln logs to the WARNING and INFO logs.
 // Arguments are handled in the manner of fmt.Println; a newline is always appended.
 func Warningln(args ...interface{}) {
-	logging.println(severity.WarningLog, globalLogger, logging.filter, args...)
+	logging.println(severity.WarningLog, logging.logger, logging.filter, args...)
 }
 
 // WarninglnDepth acts as Warningln but uses depth to determine which call frame to log.
 // WarninglnDepth(0, "msg") is the same as Warningln("msg").
 func WarninglnDepth(depth int, args ...interface{}) {
-	logging.printlnDepth(severity.WarningLog, globalLogger, logging.filter, depth, args...)
+	logging.printlnDepth(severity.WarningLog, logging.logger, logging.filter, depth, args...)
 }
 
 // Warningf logs to the WARNING and INFO logs.
 // Arguments are handled in the manner of fmt.Printf; a newline is appended if missing.
 func Warningf(format string, args ...interface{}) {
-	logging.printf(severity.WarningLog, globalLogger, logging.filter, format, args...)
+	logging.printf(severity.WarningLog, logging.logger, logging.filter, format, args...)
 }
 
 // WarningfDepth acts as Warningf but uses depth to determine which call frame to log.
 // WarningfDepth(0, "msg", args...) is the same as Warningf("msg", args...).
 func WarningfDepth(depth int, format string, args ...interface{}) {
-	logging.printfDepth(severity.WarningLog, globalLogger, logging.filter, depth, format, args...)
+	logging.printfDepth(severity.WarningLog, logging.logger, logging.filter, depth, format, args...)
 }
 
 // Error logs to the ERROR, WARNING, and INFO logs.
 // Arguments are handled in the manner of fmt.Print; a newline is appended if missing.
 func Error(args ...interface{}) {
-	logging.print(severity.ErrorLog, globalLogger, logging.filter, args...)
+	logging.print(severity.ErrorLog, logging.logger, logging.filter, args...)
 }
 
 // ErrorDepth acts as Error but uses depth to determine which call frame to log.
 // ErrorDepth(0, "msg") is the same as Error("msg").
 func ErrorDepth(depth int, args ...interface{}) {
-	logging.printDepth(severity.ErrorLog, globalLogger, logging.filter, depth, args...)
+	logging.printDepth(severity.ErrorLog, logging.logger, logging.filter, depth, args...)
 }
 
 // Errorln logs to the ERROR, WARNING, and INFO logs.
 // Arguments are handled in the manner of fmt.Println; a newline is always appended.
 func Errorln(args ...interface{}) {
-	logging.println(severity.ErrorLog, globalLogger, logging.filter, args...)
+	logging.println(severity.ErrorLog, logging.logger, logging.filter, args...)
 }
 
 // ErrorlnDepth acts as Errorln but uses depth to determine which call frame to log.
 // ErrorlnDepth(0, "msg") is the same as Errorln("msg").
 func ErrorlnDepth(depth int, args ...interface{}) {
-	logging.printlnDepth(severity.ErrorLog, globalLogger, logging.filter, depth, args...)
+	logging.printlnDepth(severity.ErrorLog, logging.logger, logging.filter, depth, args...)
 }
 
 // Errorf logs to the ERROR, WARNING, and INFO logs.
 // Arguments are handled in the manner of fmt.Printf; a newline is appended if missing.
 func Errorf(format string, args ...interface{}) {
-	logging.printf(severity.ErrorLog, globalLogger, logging.filter, format, args...)
+	logging.printf(severity.ErrorLog, logging.logger, logging.filter, format, args...)
 }
 
 // ErrorfDepth acts as Errorf but uses depth to determine which call frame to log.
 // ErrorfDepth(0, "msg", args...) is the same as Errorf("msg", args...).
 func ErrorfDepth(depth int, format string, args ...interface{}) {
-	logging.printfDepth(severity.ErrorLog, globalLogger, logging.filter, depth, format, args...)
+	logging.printfDepth(severity.ErrorLog, logging.logger, logging.filter, depth, format, args...)
 }
 
 // ErrorS structured logs to the ERROR, WARNING, and INFO logs.
@@ -1576,52 +1572,52 @@ func ErrorfDepth(depth int, format string, args ...interface{}) {
 // output:
 // >> E1025 00:15:15.525108       1 controller_utils.go:114] "Failed to update pod status" err="timeout"
 func ErrorS(err error, msg string, keysAndValues ...interface{}) {
-	logging.errorS(err, globalLogger, logging.filter, 0, msg, keysAndValues...)
+	logging.errorS(err, logging.logger, logging.filter, 0, msg, keysAndValues...)
 }
 
 // ErrorSDepth acts as ErrorS but uses depth to determine which call frame to log.
 // ErrorSDepth(0, "msg") is the same as ErrorS("msg").
 func ErrorSDepth(depth int, err error, msg string, keysAndValues ...interface{}) {
-	logging.errorS(err, globalLogger, logging.filter, depth, msg, keysAndValues...)
+	logging.errorS(err, logging.logger, logging.filter, depth, msg, keysAndValues...)
 }
 
 // Fatal logs to the FATAL, ERROR, WARNING, and INFO logs,
 // including a stack trace of all running goroutines, then calls OsExit(255).
 // Arguments are handled in the manner of fmt.Print; a newline is appended if missing.
 func Fatal(args ...interface{}) {
-	logging.print(severity.FatalLog, globalLogger, logging.filter, args...)
+	logging.print(severity.FatalLog, logging.logger, logging.filter, args...)
 }
 
 // FatalDepth acts as Fatal but uses depth to determine which call frame to log.
 // FatalDepth(0, "msg") is the same as Fatal("msg").
 func FatalDepth(depth int, args ...interface{}) {
-	logging.printDepth(severity.FatalLog, globalLogger, logging.filter, depth, args...)
+	logging.printDepth(severity.FatalLog, logging.logger, logging.filter, depth, args...)
 }
 
 // Fatalln logs to the FATAL, ERROR, WARNING, and INFO logs,
 // including a stack trace of all running goroutines, then calls OsExit(255).
 // Arguments are handled in the manner of fmt.Println; a newline is always appended.
 func Fatalln(args ...interface{}) {
-	logging.println(severity.FatalLog, globalLogger, logging.filter, args...)
+	logging.println(severity.FatalLog, logging.logger, logging.filter, args...)
 }
 
 // FatallnDepth acts as Fatalln but uses depth to determine which call frame to log.
 // FatallnDepth(0, "msg") is the same as Fatalln("msg").
 func FatallnDepth(depth int, args ...interface{}) {
-	logging.printlnDepth(severity.FatalLog, globalLogger, logging.filter, depth, args...)
+	logging.printlnDepth(severity.FatalLog, logging.logger, logging.filter, depth, args...)
 }
 
 // Fatalf logs to the FATAL, ERROR, WARNING, and INFO logs,
 // including a stack trace of all running goroutines, then calls OsExit(255).
 // Arguments are handled in the manner of fmt.Printf; a newline is appended if missing.
 func Fatalf(format string, args ...interface{}) {
-	logging.printf(severity.FatalLog, globalLogger, logging.filter, format, args...)
+	logging.printf(severity.FatalLog, logging.logger, logging.filter, format, args...)
 }
 
 // FatalfDepth acts as Fatalf but uses depth to determine which call frame to log.
 // FatalfDepth(0, "msg", args...) is the same as Fatalf("msg", args...).
 func FatalfDepth(depth int, format string, args ...interface{}) {
-	logging.printfDepth(severity.FatalLog, globalLogger, logging.filter, depth, format, args...)
+	logging.printfDepth(severity.FatalLog, logging.logger, logging.filter, depth, format, args...)
 }
 
 // fatalNoStacks is non-zero if we are to exit without dumping goroutine stacks.
@@ -1632,41 +1628,41 @@ var fatalNoStacks uint32
 // Arguments are handled in the manner of fmt.Print; a newline is appended if missing.
 func Exit(args ...interface{}) {
 	atomic.StoreUint32(&fatalNoStacks, 1)
-	logging.print(severity.FatalLog, globalLogger, logging.filter, args...)
+	logging.print(severity.FatalLog, logging.logger, logging.filter, args...)
 }
 
 // ExitDepth acts as Exit but uses depth to determine which call frame to log.
 // ExitDepth(0, "msg") is the same as Exit("msg").
 func ExitDepth(depth int, args ...interface{}) {
 	atomic.StoreUint32(&fatalNoStacks, 1)
-	logging.printDepth(severity.FatalLog, globalLogger, logging.filter, depth, args...)
+	logging.printDepth(severity.FatalLog, logging.logger, logging.filter, depth, args...)
 }
 
 // Exitln logs to the FATAL, ERROR, WARNING, and INFO logs, then calls OsExit(1).
 func Exitln(args ...interface{}) {
 	atomic.StoreUint32(&fatalNoStacks, 1)
-	logging.println(severity.FatalLog, globalLogger, logging.filter, args...)
+	logging.println(severity.FatalLog, logging.logger, logging.filter, args...)
 }
 
 // ExitlnDepth acts as Exitln but uses depth to determine which call frame to log.
 // ExitlnDepth(0, "msg") is the same as Exitln("msg").
 func ExitlnDepth(depth int, args ...interface{}) {
 	atomic.StoreUint32(&fatalNoStacks, 1)
-	logging.printlnDepth(severity.FatalLog, globalLogger, logging.filter, depth, args...)
+	logging.printlnDepth(severity.FatalLog, logging.logger, logging.filter, depth, args...)
 }
 
 // Exitf logs to the FATAL, ERROR, WARNING, and INFO logs, then calls OsExit(1).
 // Arguments are handled in the manner of fmt.Printf; a newline is appended if missing.
 func Exitf(format string, args ...interface{}) {
 	atomic.StoreUint32(&fatalNoStacks, 1)
-	logging.printf(severity.FatalLog, globalLogger, logging.filter, format, args...)
+	logging.printf(severity.FatalLog, logging.logger, logging.filter, format, args...)
 }
 
 // ExitfDepth acts as Exitf but uses depth to determine which call frame to log.
 // ExitfDepth(0, "msg", args...) is the same as Exitf("msg", args...).
 func ExitfDepth(depth int, format string, args ...interface{}) {
 	atomic.StoreUint32(&fatalNoStacks, 1)
-	logging.printfDepth(severity.FatalLog, globalLogger, logging.filter, depth, format, args...)
+	logging.printfDepth(severity.FatalLog, logging.logger, logging.filter, depth, format, args...)
 }
 
 // LogFilter is a collection of functions that can filter all logging calls,

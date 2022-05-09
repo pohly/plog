@@ -1879,8 +1879,10 @@ func TestFlushDaemon(t *testing.T) {
 		}
 		testClock := testingclock.NewFakeClock(time.Now())
 		testLog := loggingT{
-			flushInterval: time.Second,
-			flushD:        newFlushDaemon(spyFunc, testClock),
+			settings: settings{
+				flushInterval: time.Second,
+			},
+			flushD: newFlushDaemon(spyFunc, testClock),
 		}
 
 		// Calling testLog will call createFile, which should start the daemon.
@@ -2013,5 +2015,28 @@ func TestCaptureState(t *testing.T) {
 	}
 	if file != logging.file {
 		t.Errorf("Output files should have been restored to %v, got %v", file, logging.file)
+	}
+}
+
+func TestSettingsDeepCopy(t *testing.T) {
+	logger := logr.Discard()
+
+	settings := settings{
+		logger: &logger,
+		vmodule: moduleSpec{
+			filter: []modulePat{
+				{pattern: "a"},
+				{pattern: "b"},
+				{pattern: "c"},
+			},
+		},
+	}
+	copy := settings.deepCopy()
+	if !reflect.DeepEqual(settings, copy) {
+		t.Fatalf("Copy not identical to original settings. Original:\n    %+v\nCopy:    %+v", settings, copy)
+	}
+	settings.vmodule.filter[1].pattern = "x"
+	if copy.vmodule.filter[1].pattern == settings.vmodule.filter[1].pattern {
+		t.Fatal("Copy should not have shared vmodule.filter.")
 	}
 }
