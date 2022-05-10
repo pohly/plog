@@ -46,13 +46,13 @@ func TestInfo(t *testing.T) {
 		"should not print duplicate keys with the same value": {
 			text:          "test",
 			keysAndValues: []interface{}{"akey", "avalue", "akey", "avalue"},
-			expectedOutput: `INFO test akey="avalue"
+			expectedOutput: `INFO test akey="avalue" akey="avalue"
 `,
 		},
 		"should only print the last duplicate key when the values are passed to Info": {
 			text:          "test",
 			keysAndValues: []interface{}{"akey", "avalue", "akey", "avalue2"},
-			expectedOutput: `INFO test akey="avalue2"
+			expectedOutput: `INFO test akey="avalue" akey="avalue2"
 `,
 		},
 		"should only print the duplicate key that is passed to Info if one was passed to the logger": {
@@ -118,7 +118,7 @@ func TestInfo(t *testing.T) {
 
 			actual := buffer.String()
 			if actual != test.expectedOutput {
-				t.Errorf("expected %q did not match actual %q", test.expectedOutput, actual)
+				t.Errorf("Expected:\n%sActual:\n%s\n", test.expectedOutput, actual)
 			}
 		})
 	}

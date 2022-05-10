@@ -132,9 +132,8 @@ func (l *tlogger) print(err error, s severity.Severity, msg string, kvList []int
 	if err != nil {
 		serialize.KVListFormat(&b.Buffer, "err", err)
 	}
-	trimmed := serialize.TrimDuplicates(l.values, kvList)
-	serialize.KVListFormat(&b.Buffer, trimmed[0]...)
-	serialize.KVListFormat(&b.Buffer, trimmed[1]...)
+	merged := serialize.MergeKVs(l.values, kvList)
+	serialize.KVListFormat(&b.Buffer, merged...)
 	if b.Len() == 0 || b.Bytes()[b.Len()-1] != '\n' {
 		b.WriteByte('\n')
 	}

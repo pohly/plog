@@ -41,7 +41,7 @@ func testOutput(t *testing.T, format string) {
 			klogr:         new().V(0),
 			text:          "test",
 			keysAndValues: []interface{}{"akey", "avalue"},
-			expectedOutput: ` "msg"="test"  "akey"="avalue"
+			expectedOutput: ` "msg"="test" "akey"="avalue"
 `,
 			expectedKlogOutput: `"test" akey="avalue"
 `,
@@ -50,7 +50,7 @@ func testOutput(t *testing.T, format string) {
 			klogr:         new().V(0).WithName("me"),
 			text:          "test",
 			keysAndValues: []interface{}{"akey", "avalue"},
-			expectedOutput: `me "msg"="test"  "akey"="avalue"
+			expectedOutput: `me "msg"="test" "akey"="avalue"
 `,
 			expectedKlogOutput: `"me: test" akey="avalue"
 `,
@@ -59,34 +59,34 @@ func testOutput(t *testing.T, format string) {
 			klogr:         new().V(0).WithName("hello").WithName("world"),
 			text:          "test",
 			keysAndValues: []interface{}{"akey", "avalue"},
-			expectedOutput: `hello/world "msg"="test"  "akey"="avalue"
+			expectedOutput: `hello/world "msg"="test" "akey"="avalue"
 `,
 			expectedKlogOutput: `"hello/world: test" akey="avalue"
 `,
 		},
-		"should not print duplicate keys with the same value": {
+		"may print duplicate keys with the same value": {
 			klogr:         new().V(0),
 			text:          "test",
 			keysAndValues: []interface{}{"akey", "avalue", "akey", "avalue"},
-			expectedOutput: ` "msg"="test"  "akey"="avalue"
+			expectedOutput: ` "msg"="test" "akey"="avalue"
 `,
-			expectedKlogOutput: `"test" akey="avalue"
+			expectedKlogOutput: `"test" akey="avalue" akey="avalue"
 `,
 		},
-		"should only print the last duplicate key when the values are passed to Info": {
+		"may print duplicate keys when the values are passed to Info": {
 			klogr:         new().V(0),
 			text:          "test",
 			keysAndValues: []interface{}{"akey", "avalue", "akey", "avalue2"},
-			expectedOutput: ` "msg"="test"  "akey"="avalue2"
+			expectedOutput: ` "msg"="test" "akey"="avalue2"
 `,
-			expectedKlogOutput: `"test" akey="avalue2"
+			expectedKlogOutput: `"test" akey="avalue" akey="avalue2"
 `,
 		},
 		"should only print the duplicate key that is passed to Info if one was passed to the logger": {
 			klogr:         new().WithValues("akey", "avalue"),
 			text:          "test",
 			keysAndValues: []interface{}{"akey", "avalue"},
-			expectedOutput: ` "msg"="test"  "akey"="avalue"
+			expectedOutput: ` "msg"="test" "akey"="avalue"
 `,
 			expectedKlogOutput: `"test" akey="avalue"
 `,
@@ -95,7 +95,7 @@ func testOutput(t *testing.T, format string) {
 			klogr:         new().WithValues("akey9", "avalue9", "akey8", "avalue8", "akey1", "avalue1"),
 			text:          "test",
 			keysAndValues: []interface{}{"akey5", "avalue5", "akey4", "avalue4"},
-			expectedOutput: ` "msg"="test" "akey1"="avalue1" "akey8"="avalue8" "akey9"="avalue9" "akey4"="avalue4" "akey5"="avalue5"
+			expectedOutput: ` "msg"="test" "akey1"="avalue1" "akey4"="avalue4" "akey5"="avalue5" "akey8"="avalue8" "akey9"="avalue9"
 `,
 			expectedKlogOutput: `"test" akey9="avalue9" akey8="avalue8" akey1="avalue1" akey5="avalue5" akey4="avalue4"
 `,
@@ -104,7 +104,7 @@ func testOutput(t *testing.T, format string) {
 			klogr:         new().WithValues("akey", "avalue"),
 			text:          "test",
 			keysAndValues: []interface{}{"akey", "avalue2"},
-			expectedOutput: ` "msg"="test"  "akey"="avalue2"
+			expectedOutput: ` "msg"="test" "akey"="avalue2"
 `,
 			expectedKlogOutput: `"test" akey="avalue2"
 `,
@@ -113,7 +113,7 @@ func testOutput(t *testing.T, format string) {
 			klogr:         new(),
 			text:          "test",
 			keysAndValues: []interface{}{"akey", "avalue", "akey2"},
-			expectedOutput: ` "msg"="test"  "akey"="avalue" "akey2"="(MISSING)"
+			expectedOutput: ` "msg"="test" "akey"="avalue" "akey2"="(MISSING)"
 `,
 			expectedKlogOutput: `"test" akey="avalue" akey2="(MISSING)"
 `,
@@ -122,7 +122,8 @@ func testOutput(t *testing.T, format string) {
 			klogr:         new().WithValues("keyWithoutValue"),
 			text:          "test",
 			keysAndValues: []interface{}{"akey", "avalue", "akey2"},
-			expectedOutput: ` "msg"="test" "keyWithoutValue"="(MISSING)" "akey"="avalue" "akey2"="(MISSING)"
+			// klogr format sorts all key/value pairs.
+			expectedOutput: ` "msg"="test" "akey"="avalue" "akey2"="(MISSING)" "keyWithoutValue"="(MISSING)"
 `,
 			expectedKlogOutput: `"test" keyWithoutValue="(MISSING)" akey="avalue" akey2="(MISSING)"
 `,
@@ -131,7 +132,7 @@ func testOutput(t *testing.T, format string) {
 			klogr:         new(),
 			text:          "test",
 			keysAndValues: []interface{}{"akey", "<&>"},
-			expectedOutput: ` "msg"="test"  "akey"="<&>"
+			expectedOutput: ` "msg"="test" "akey"="<&>"
 `,
 			expectedKlogOutput: `"test" akey="<&>"
 `,
@@ -140,7 +141,8 @@ func testOutput(t *testing.T, format string) {
 			klogr:         new().WithValues("basekey1", "basevar1", "basekey2"),
 			text:          "test",
 			keysAndValues: []interface{}{"akey", "avalue", "akey2"},
-			expectedOutput: ` "msg"="test" "basekey1"="basevar1" "basekey2"="(MISSING)" "akey"="avalue" "akey2"="(MISSING)"
+			// klogr format sorts all key/value pairs.
+			expectedOutput: ` "msg"="test" "akey"="avalue" "akey2"="(MISSING)" "basekey1"="basevar1" "basekey2"="(MISSING)"
 `,
 			expectedKlogOutput: `"test" basekey1="basevar1" basekey2="(MISSING)" akey="avalue" akey2="(MISSING)"
 `,
@@ -149,7 +151,7 @@ func testOutput(t *testing.T, format string) {
 			klogr:         new().V(0),
 			text:          "test",
 			keysAndValues: []interface{}{"err", errors.New("whoops")},
-			expectedOutput: ` "msg"="test"  "err"="whoops"
+			expectedOutput: ` "msg"="test" "err"="whoops"
 `,
 			expectedKlogOutput: `"test" err="whoops"
 `,
@@ -158,7 +160,7 @@ func testOutput(t *testing.T, format string) {
 			klogr:         new().V(0),
 			text:          "test",
 			keysAndValues: []interface{}{"err", &customErrorJSON{"whoops"}},
-			expectedOutput: ` "msg"="test"  "err"="WHOOPS"
+			expectedOutput: ` "msg"="test" "err"="WHOOPS"
 `,
 			expectedKlogOutput: `"test" err="whoops"
 `,
@@ -168,9 +170,9 @@ func testOutput(t *testing.T, format string) {
 			text:  "test",
 			err:   errors.New("whoops"),
 			// The message is printed to three different log files (info, warning, error), so we see it three times in our output buffer.
-			expectedOutput: ` "msg"="test" "error"="whoops"  
- "msg"="test" "error"="whoops"  
- "msg"="test" "error"="whoops"  
+			expectedOutput: ` "msg"="test" "error"="whoops" 
+ "msg"="test" "error"="whoops" 
+ "msg"="test" "error"="whoops" 
 `,
 			expectedKlogOutput: `"test" err="whoops"
 "test" err="whoops"
@@ -200,7 +202,7 @@ func testOutput(t *testing.T, format string) {
 				expectedOutput = test.expectedKlogOutput
 			}
 			if actual != expectedOutput {
-				t.Errorf("expected %q did not match actual %q", expectedOutput, actual)
+				t.Errorf("Expected:\n%s\nActual:\n%s\n", expectedOutput, actual)
 			}
 		})
 	}

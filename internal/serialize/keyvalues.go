@@ -93,6 +93,51 @@ func TrimDuplicates(kvLists ...[]interface{}) [][]interface{} {
 	return outs
 }
 
+// MergeKVs deduplicates elements provided in two key/value slices.
+//
+// Keys in each slice are expected to be unique, so duplicates can only occur
+// when the first and second slice contain the same key. When that happens, the
+// key/value pair from the second slice is used. The first slice must be well-formed
+// (= even key/value pairs). The second one may have a missing value, in which
+// case the special "missing value" is added to the result.
+func MergeKVs(first, second []interface{}) []interface{} {
+	maxLength := len(first) + (len(second)+1)/2*2
+	if maxLength == 0 {
+		// Nothing to do at all.
+		return nil
+	}
+
+	if len(first) == 0 && len(second)%2 == 0 {
+		// Nothing to be overridden, second slice is well-formed
+		// and can be used directly.
+		return second
+	}
+
+	// Determine which keys are in the second slice so that we can skip
+	// them when iterating over the first one. The code intentionally
+	// favors performance over completeness: we assume that keys are string
+	// constants and thus compare equal when the string values are equal. A
+	// string constant being overridden by, for example, a fmt.Stringer is
+	// not handled.
+	overrides := map[interface{}]bool{}
+	for i := 0; i < len(second); i += 2 {
+		overrides[second[i]] = true
+	}
+	merged := make([]interface{}, 0, maxLength)
+	for i := 0; i+1 < len(first); i += 2 {
+		key := first[i]
+		if overrides[key] {
+			continue
+		}
+		merged = append(merged, key, first[i+1])
+	}
+	merged = append(merged, second...)
+	if len(merged)%2 != 0 {
+		merged = append(merged, missingValue)
+	}
+	return merged
+}
+
 const missingValue = "(MISSING)"
 
 // KVListFormat serializes all key/value pairs into the provided buffer.
