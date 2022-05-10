@@ -321,7 +321,13 @@ I output.go:<LINE>] "test" firstKey=1 secondKey=3
 		"MarshalLog() that panics": {
 			text:   "marshaler panic",
 			values: []interface{}{"obj", faultyMarshaler{}},
-			expectedOutput: `I output.go:<LINE>] "marshaler panic" obj={}
+			expectedOutput: `I output.go:<LINE>] "marshaler panic" obj="<panic: fake MarshalLog panic>"
+`,
+		},
+		"MarshalLog() that returns itself": {
+			text:   "marshaler recursion",
+			values: []interface{}{"obj", recursiveMarshaler{}},
+			expectedOutput: `I output.go:<LINE>] "marshaler recursion" obj={}
 `,
 		},
 	}
@@ -764,6 +770,15 @@ func (f faultyMarshaler) MarshalLog() interface{} {
 }
 
 var _ logr.Marshaler = faultyMarshaler{}
+
+type recursiveMarshaler struct{}
+
+// MarshalLog returns itself, which could cause the logger to recurse infinitely.
+func (r recursiveMarshaler) MarshalLog() interface{} {
+	return r
+}
+
+var _ logr.Marshaler = recursiveMarshaler{}
 
 type faultyError struct{}
 

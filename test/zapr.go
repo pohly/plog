@@ -137,8 +137,12 @@ I output.go:<LINE>] "odd WithValues" keyWithoutValue="(MISSING)"
 `: `{"caller":"test/output.go:<LINE>","msg":"error panic","errError":"PANIC=fake Error panic"}
 `,
 
-		`I output.go:<LINE>] "marshaler panic" obj={}
+		`I output.go:<LINE>] "marshaler panic" obj="<panic: fake MarshalLog panic>"
 `: `{"caller":"test/output.go:<LINE>","msg":"marshaler panic","v":0,"objError":"PANIC=fake MarshalLog panic"}
+`,
+
+		`I output.go:<LINE>] "marshaler recursion" obj={}
+`: `{"caller":"test/output.go:<LINE>","msg":"marshaler recursion","v":0,"obj":{}}
 `,
 
 		// klog.Info
