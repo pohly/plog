@@ -118,7 +118,7 @@ func TestInfo(t *testing.T) {
 
 			actual := buffer.String()
 			if actual != test.expectedOutput {
-				t.Errorf("expected %q did not match actual %q", test.expectedOutput, actual)
+				t.Errorf("Expected:\n%sActual:\n%s\n", test.expectedOutput, actual)
 			}
 		})
 	}

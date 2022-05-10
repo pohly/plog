@@ -200,7 +200,7 @@ func testOutput(t *testing.T, format string) {
 				expectedOutput = test.expectedKlogOutput
 			}
 			if actual != expectedOutput {
-				t.Errorf("expected %q did not match actual %q", expectedOutput, actual)
+				t.Errorf("Expected:\n%s\nActual:\n%s\n", expectedOutput, actual)
 			}
 		})
 	}
