@@ -266,6 +266,47 @@ I output.go:<LINE>] "test" firstKey=1 secondKey=3
 			expectedOutput: `I output.go:<LINE>] "test" pods=[kube-system/pod-1 kube-system/pod-2]
 `,
 		},
+		"KObjSlice okay": {
+			text: "test",
+			values: []interface{}{"pods",
+				klog.KObjSlice([]interface{}{
+					&kmeta{Name: "pod-1", Namespace: "kube-system"},
+					&kmeta{Name: "pod-2", Namespace: "kube-system"},
+				})},
+			expectedOutput: `I output.go:<LINE>] "test" pods="[kube-system/pod-1 kube-system/pod-2]"
+`,
+		},
+		"KObjSlice nil arg": {
+			text: "test",
+			values: []interface{}{"pods",
+				klog.KObjSlice(nil)},
+			expectedOutput: `I output.go:<LINE>] "test" pods="[]"
+`,
+		},
+		"KObjSlice int arg": {
+			text: "test",
+			values: []interface{}{"pods",
+				klog.KObjSlice(1)},
+			expectedOutput: `I output.go:<LINE>] "test" pods="<KObjSlice needs a slice, got type int>"
+`,
+		},
+		"KObjSlice nil entry": {
+			text: "test",
+			values: []interface{}{"pods",
+				klog.KObjSlice([]interface{}{
+					&kmeta{Name: "pod-1", Namespace: "kube-system"},
+					nil,
+				})},
+			expectedOutput: `I output.go:<LINE>] "test" pods="[kube-system/pod-1 <nil>]"
+`,
+		},
+		"KObjSlice ints": {
+			text: "test",
+			values: []interface{}{"ints",
+				klog.KObjSlice([]int{1, 2, 3})},
+			expectedOutput: `I output.go:<LINE>] "test" ints="<KObjSlice needs a slice of values implementing KMetadata, got type int>"
+`,
+		},
 		"regular error types as value": {
 			text:   "test",
 			values: []interface{}{"err", errors.New("whoops")},

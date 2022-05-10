@@ -73,6 +73,26 @@ func ZaprOutputMappingDirect() map[string]string {
 `: `{"caller":"test/output.go:<LINE>","msg":"test","v":0,"pods":[{"name":"pod-1","namespace":"kube-system"},{"name":"pod-2","namespace":"kube-system"}]}
 `,
 
+		`I output.go:<LINE>] "test" pods="[kube-system/pod-1 kube-system/pod-2]"
+`: `{"caller":"test/output.go:<LINE>","msg":"test","v":0,"pods":[{"name":"pod-1","namespace":"kube-system"},{"name":"pod-2","namespace":"kube-system"}]}
+`,
+
+		`I output.go:<LINE>] "test" pods="[]"
+`: `{"caller":"test/output.go:<LINE>","msg":"test","v":0,"pods":null}
+`,
+
+		`I output.go:<LINE>] "test" pods="<KObjSlice needs a slice, got type int>"
+`: `{"caller":"test/output.go:<LINE>","msg":"test","v":0,"pods":"<KObjSlice needs a slice, got type int>"}
+`,
+
+		`I output.go:<LINE>] "test" ints="<KObjSlice needs a slice of values implementing KMetadata, got type int>"
+`: `{"caller":"test/output.go:<LINE>","msg":"test","v":0,"ints":"<KObjSlice needs a slice of values implementing KMetadata, got type int>"}
+`,
+
+		`I output.go:<LINE>] "test" pods="[kube-system/pod-1 <nil>]"
+`: `{"caller":"test/output.go:<LINE>","msg":"test","v":0,"pods":[{"name":"pod-1","namespace":"kube-system"},null]}
+`,
+
 		`I output.go:<LINE>] "test" akey="avalue"
 `: `{"caller":"test/output.go:<LINE>","msg":"test","v":0,"akey":"avalue"}
 `,
