@@ -212,16 +212,12 @@ I output.go:<LINE>] "test" firstKey=1 secondKey=3
 			expectedOutput: `I output.go:<LINE>] "test"
 `,
 		},
-		// TODO: unify behavior of loggers.
-		// klog doesn't deduplicate, klogr and textlogger do. We can ensure via static code analysis
-		// that this doesn't occur, so we shouldn't pay the runtime overhead for deduplication here
-		// and remove that from klogr and textlogger (https://github.com/kubernetes/klog/issues/286).
-		// 		"print duplicate keys in arguments": {
-		// 			text:   "test",
-		// 			values: []interface{}{"akey", "avalue", "akey", "avalue2"},
-		// 			expectedOutput: `I output.go:<LINE>] "test" akey="avalue" akey="avalue2"
-		// `,
-		// 		},
+		"print duplicate keys in arguments": {
+			text:   "test",
+			values: []interface{}{"akey", "avalue", "akey", "avalue2"},
+			expectedOutput: `I output.go:<LINE>] "test" akey="avalue" akey="avalue2"
+`,
+		},
 		"preserve order of key/value pairs": {
 			withValues: []interface{}{"akey9", "avalue9", "akey8", "avalue8", "akey1", "avalue1"},
 			text:       "test",

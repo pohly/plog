@@ -81,9 +81,8 @@ func (l *tlogger) GetCallStackHelper() func() {
 func (l *tlogger) Info(level int, msg string, kvList ...interface{}) {
 	l.t.Helper()
 	buffer := &bytes.Buffer{}
-	trimmed := serialize.TrimDuplicates(l.values, kvList)
-	serialize.KVListFormat(buffer, trimmed[0]...)
-	serialize.KVListFormat(buffer, trimmed[1]...)
+	merged := serialize.MergeKVs(l.values, kvList)
+	serialize.KVListFormat(buffer, merged...)
 	l.log("INFO", msg, buffer)
 }
 
@@ -97,9 +96,8 @@ func (l *tlogger) Error(err error, msg string, kvList ...interface{}) {
 	if err != nil {
 		serialize.KVListFormat(buffer, "err", err)
 	}
-	trimmed := serialize.TrimDuplicates(l.values, kvList)
-	serialize.KVListFormat(buffer, trimmed[0]...)
-	serialize.KVListFormat(buffer, trimmed[1]...)
+	merged := serialize.MergeKVs(l.values, kvList)
+	serialize.KVListFormat(buffer, merged...)
 	l.log("ERROR", msg, buffer)
 }
 

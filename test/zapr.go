@@ -37,6 +37,10 @@ func ZaprOutputMappingDirect() map[string]string {
 `: `{"caller":"test/output.go:<LINE>","msg":"helper","v":0,"akey":"avalue"}
 `,
 
+		`I output.go:<LINE>] "test" akey="avalue" akey="avalue2"
+`: `{"caller":"test/output.go:<LINE>","msg":"test","v":0,"akey":"avalue","akey":"avalue2"}
+`,
+
 		`I output.go:<LINE>] "hello/world: test" akey="avalue"
 `: `{"logger":"hello.world","caller":"test/output.go:<LINE>","msg":"test","v":0,"akey":"avalue"}
 `,
