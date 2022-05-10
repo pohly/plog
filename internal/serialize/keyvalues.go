@@ -20,6 +20,8 @@ import (
 	"bytes"
 	"fmt"
 	"strconv"
+
+	"github.com/go-logr/logr"
 )
 
 // WithValues implements LogSink.WithValues. The old key/value pairs are
@@ -176,6 +178,24 @@ func KVListFormat(b *bytes.Buffer, keysAndValues ...interface{}) {
 			writeStringValue(b, true, v)
 		case error:
 			writeStringValue(b, true, ErrorToString(v))
+		case logr.Marshaler:
+			value := MarshalerToValue(v)
+			// A marshaler that returns a string is useful for
+			// delayed formatting of complex values. We treat this
+			// case like a normal string. This is useful for
+			// multi-line support.
+			//
+			// We could do this by recursively formatting a value,
+			// but that comes with the risk of infinite recursion
+			// if a marshaler returns itself. Instead we call it
+			// only once and rely on it returning the intended
+			// value directly.
+			switch value := value.(type) {
+			case string:
+				writeStringValue(b, true, value)
+			default:
+				writeStringValue(b, false, fmt.Sprintf("%+v", v))
+			}
 		case []byte:
 			// In https://github.com/kubernetes/klog/pull/237 it was decided
 			// to format byte slices with "%+q". The advantages of that are:
@@ -205,6 +225,18 @@ func StringerToString(s fmt.Stringer) (ret string) {
 		}
 	}()
 	ret = s.String()
+	return
+}
+
+// MarshalerToValue invokes a marshaler and catches
+// panics.
+func MarshalerToValue(m logr.Marshaler) (ret interface{}) {
+	defer func() {
+		if err := recover(); err != nil {
+			ret = fmt.Sprintf("<panic: %s>", err)
+		}
+	}()
+	ret = m.MarshalLog()
 	return
 }
 
