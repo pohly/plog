@@ -153,106 +153,66 @@ No whitespace.`,
 
 func TestDuplicates(t *testing.T) {
 	for name, test := range map[string]struct {
-		first, second   []interface{}
-		expectedTrimmed [][]interface{}
-		expectedMerged  []interface{}
+		first, second []interface{}
+		expected      []interface{}
 	}{
-		"empty": {
-			expectedTrimmed: [][]interface{}{{}, {}},
-		},
+		"empty": {},
 		"no-duplicates": {
-			first:  makeKV("a", 3),
-			second: makeKV("b", 3),
-			expectedTrimmed: [][]interface{}{
-				makeKV("a", 3),
-				makeKV("b", 3),
-			},
-			expectedMerged: append(makeKV("a", 3), makeKV("b", 3)...),
+			first:    makeKV("a", 3),
+			second:   makeKV("b", 3),
+			expected: append(makeKV("a", 3), makeKV("b", 3)...),
 		},
 		"all-duplicates": {
-			first:  makeKV("a", 3),
-			second: makeKV("a", 3),
-			expectedTrimmed: [][]interface{}{
-				{},
-				makeKV("a", 3),
-			},
-			expectedMerged: makeKV("a", 3),
+			first:    makeKV("a", 3),
+			second:   makeKV("a", 3),
+			expected: makeKV("a", 3),
 		},
 		"start-duplicate": {
-			first:  append([]interface{}{"x", 1}, makeKV("a", 3)...),
-			second: append([]interface{}{"x", 2}, makeKV("b", 3)...),
-			expectedTrimmed: [][]interface{}{
-				makeKV("a", 3),
-				append([]interface{}{"x", 2}, makeKV("b", 3)...),
-			},
-			expectedMerged: append(append(makeKV("a", 3), "x", 2), makeKV("b", 3)...),
+			first:    append([]interface{}{"x", 1}, makeKV("a", 3)...),
+			second:   append([]interface{}{"x", 2}, makeKV("b", 3)...),
+			expected: append(append(makeKV("a", 3), "x", 2), makeKV("b", 3)...),
 		},
 		"subset-first": {
-			first:  append([]interface{}{"x", 1}, makeKV("a", 3)...),
-			second: append([]interface{}{"x", 2}, makeKV("a", 3)...),
-			expectedTrimmed: [][]interface{}{
-				{},
-				append([]interface{}{"x", 2}, makeKV("a", 3)...),
-			},
-			expectedMerged: append([]interface{}{"x", 2}, makeKV("a", 3)...),
+			first:    append([]interface{}{"x", 1}, makeKV("a", 3)...),
+			second:   append([]interface{}{"x", 2}, makeKV("a", 3)...),
+			expected: append([]interface{}{"x", 2}, makeKV("a", 3)...),
 		},
 		"subset-second": {
-			first:  append([]interface{}{"x", 1}, makeKV("a", 1)...),
-			second: append([]interface{}{"x", 2}, makeKV("b", 2)...),
-			expectedTrimmed: [][]interface{}{
-				makeKV("a", 1),
-				append([]interface{}{"x", 2}, makeKV("b", 2)...),
-			},
-			expectedMerged: append(append(makeKV("a", 1), "x", 2), makeKV("b", 2)...),
+			first:    append([]interface{}{"x", 1}, makeKV("a", 1)...),
+			second:   append([]interface{}{"x", 2}, makeKV("b", 2)...),
+			expected: append(append(makeKV("a", 1), "x", 2), makeKV("b", 2)...),
 		},
 		"end-duplicate": {
-			first:  append(makeKV("a", 3), "x", 1),
-			second: append(makeKV("b", 3), "x", 2),
-			expectedTrimmed: [][]interface{}{
-				makeKV("a", 3),
-				append(makeKV("b", 3), "x", 2),
-			},
-			expectedMerged: append(makeKV("a", 3), append(makeKV("b", 3), "x", 2)...),
+			first:    append(makeKV("a", 3), "x", 1),
+			second:   append(makeKV("b", 3), "x", 2),
+			expected: append(makeKV("a", 3), append(makeKV("b", 3), "x", 2)...),
 		},
 		"middle-duplicate": {
-			first:  []interface{}{"a-0", 0, "x", 1, "a-1", 2},
-			second: []interface{}{"b-0", 0, "x", 2, "b-1", 2},
-			expectedTrimmed: [][]interface{}{
-				{"a-0", 0, "a-1", 2},
-				{"b-0", 0, "x", 2, "b-1", 2},
-			},
-			expectedMerged: []interface{}{"a-0", 0, "a-1", 2, "b-0", 0, "x", 2, "b-1", 2},
+			first:    []interface{}{"a-0", 0, "x", 1, "a-1", 2},
+			second:   []interface{}{"b-0", 0, "x", 2, "b-1", 2},
+			expected: []interface{}{"a-0", 0, "a-1", 2, "b-0", 0, "x", 2, "b-1", 2},
 		},
 		"internal-duplicates": {
 			first:  []interface{}{"a", 0, "x", 1, "a", 2},
 			second: []interface{}{"b", 0, "x", 2, "b", 2},
-			expectedTrimmed: [][]interface{}{
-				{"a", 2},
-				{"x", 2, "b", 2},
-			},
 			// This is the case where Merged keeps key/value pairs
 			// that were already duplicated inside the slices, for
 			// performance.
-			expectedMerged: []interface{}{"a", 0, "a", 2, "b", 0, "x", 2, "b", 2},
+			expected: []interface{}{"a", 0, "a", 2, "b", 0, "x", 2, "b", 2},
 		},
 	} {
 		t.Run(name, func(t *testing.T) {
-			t.Run("TrimDuplicates", func(t *testing.T) {
-				actual := serialize.TrimDuplicates(test.first, test.second)
-				expectEqual(t, "trimmed key/value pairs", test.expectedTrimmed, actual)
-			})
-
 			t.Run("Merged", func(t *testing.T) {
 				actual := serialize.MergeKVs(test.first, test.second)
-				expectEqual(t, "merged key/value pairs", test.expectedMerged, actual)
+				expectEqual(t, "merged key/value pairs", test.expected, actual)
 			})
 		})
 	}
 }
 
-// BenchmarkTrimDuplicates checks performance when TrimDuplicates is called with two slices.
+// BenchmarkMergeKVs checks performance when MergeKVs is called with two slices.
 // In practice that is how the function is used.
-func BenchmarkTrimDuplicates(b *testing.B) {
+func BenchmarkMergeKVs(b *testing.B) {
 	for firstLength := 0; firstLength < 10; firstLength++ {
 		firstA := makeKV("a", firstLength)
 		for secondLength := 0; secondLength < 10; secondLength++ {
@@ -262,7 +222,7 @@ func BenchmarkTrimDuplicates(b *testing.B) {
 				// This is the most common case: all key/value pairs are kept.
 				b.Run("no-duplicates", func(b *testing.B) {
 					expected := append(firstA, secondB...)
-					benchTrimDuplicates(b, expected, firstA, secondB)
+					benchMergeKVs(b, expected, firstA, secondB)
 				})
 
 				// Fairly unlikely...
@@ -272,7 +232,7 @@ func BenchmarkTrimDuplicates(b *testing.B) {
 						expected = firstA[secondLength*2:]
 					}
 					expected = append(expected, secondA...)
-					benchTrimDuplicates(b, expected, firstA, secondA)
+					benchMergeKVs(b, expected, firstA, secondA)
 				})
 
 				// First entry is the same.
@@ -282,7 +242,7 @@ func BenchmarkTrimDuplicates(b *testing.B) {
 					second := []interface{}{"x", 1}
 					second = append(second, secondB...)
 					expected := append(firstA, second...)
-					benchTrimDuplicates(b, expected, first, second)
+					benchMergeKVs(b, expected, first, second)
 				})
 
 				// Last entry is the same.
@@ -292,7 +252,7 @@ func BenchmarkTrimDuplicates(b *testing.B) {
 					second := secondB[:]
 					second = append(second, "x", 1)
 					expected := append(firstA, second...)
-					benchTrimDuplicates(b, expected, first, second)
+					benchMergeKVs(b, expected, first, second)
 				})
 			})
 		}
@@ -310,7 +270,7 @@ func makeKV(prefix string, length int) []interface{} {
 	return kv
 }
 
-func benchTrimDuplicates(b *testing.B, expected []interface{}, first, second []interface{}) {
+func benchMergeKVs(b *testing.B, expected []interface{}, first, second []interface{}) {
 	if len(expected) == 0 {
 		expected = nil
 	}
