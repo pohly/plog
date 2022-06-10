@@ -41,7 +41,7 @@ jobs:
       - name: Install Go
         uses: actions/setup-go@v1
         with:
-          go-version: 1.13.x
+          go-version: 1.18
       - name: Add GOBIN to PATH
         run: echo "PATH=$(go env GOPATH)/bin:$PATH" >>$GITHUB_ENV
       - name: Install dependencies
