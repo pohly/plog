@@ -91,9 +91,10 @@ func TestDestinationsWithDifferentFlags(t *testing.T) {
 		notExpectedInDir map[int]res
 	}{
 		"default flags": {
-			// Everything, including the trace on fatal, goes to stderr
+			// Everything, EXCEPT the trace on fatal, goes to stderr
 
-			expectedOnStderr: allLogREs,
+			expectedOnStderr:    res{infoLogRE, warningLogRE, errorLogRE, fatalLogRE},
+			notExpectedOnStderr: res{stackTraceRE},
 		},
 		"everything disabled": {
 			// Nothing, including the trace on fatal, is showing anywhere
@@ -112,11 +113,12 @@ func TestDestinationsWithDifferentFlags(t *testing.T) {
 			notExpectedOnStderr: res{infoLogRE},
 		},
 		"with logtostderr only": {
-			// Everything, including the trace on fatal, goes to stderr
+			// Everything, EXCEPT the trace on fatal, goes to stderr
 
 			flags: []string{"-logtostderr=true", "-alsologtostderr=false", "-stderrthreshold=1000"},
 
-			expectedOnStderr: allLogREs,
+			expectedOnStderr:    res{infoLogRE, warningLogRE, errorLogRE, fatalLogRE},
+			notExpectedOnStderr: res{stackTraceRE},
 		},
 		"with log file only": {
 			// Everything, including the trace on fatal, goes to the single log file
@@ -154,13 +156,14 @@ func TestDestinationsWithDifferentFlags(t *testing.T) {
 			notExpectedInDir:    defaultNotExpectedInDirREs,
 		},
 		"with log dir and logtostderr": {
-			// Everything, including the trace on fatal, goes to stderr. The -log_dir is
+			// Everything, EXCEPT the trace on fatal, goes to stderr. The -log_dir is
 			// ignored, nothing goes to the log files in the log dir.
 
 			logdir: true,
 			flags:  []string{"-logtostderr=true", "-alsologtostderr=false", "-stderrthreshold=1000"},
 
-			expectedOnStderr: allLogREs,
+			expectedOnStderr:    res{infoLogRE, warningLogRE, errorLogRE, fatalLogRE},
+			notExpectedOnStderr: res{stackTraceRE},
 		},
 		"with log file and log dir": {
 			// Everything, including the trace on fatal, goes to the single log file.
