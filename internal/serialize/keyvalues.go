@@ -109,10 +109,10 @@ func KVListFormat(b *bytes.Buffer, keysAndValues ...interface{}) {
 		// https://github.com/kubernetes/community/blob/master/contributors/devel/sig-instrumentation/migration-to-structured-logging.md#name-arguments
 		// for the sake of performance. Keys with spaces,
 		// special characters, etc. will break parsing.
-		if k, ok := k.(string); ok {
+		if sK, ok := k.(string); ok {
 			// Avoid one allocation when the key is a string, which
 			// normally it should be.
-			b.WriteString(k)
+			b.WriteString(sK)
 		} else {
 			b.WriteString(fmt.Sprintf("%s", k))
 		}

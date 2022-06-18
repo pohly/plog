@@ -140,6 +140,18 @@ No whitespace.`,
 			keysValues: []interface{}{"point-1", point{100, 200}, "point-2", emptyPoint},
 			want:       " point-1=\"x=100, y=200\" point-2=\"<panic: value method k8s.io/klog/v2/internal/serialize_test.point.String called using nil *point pointer>\"",
 		},
+		{
+			keysValues: []interface{}{struct{ key string }{key: "k1"}, "value"},
+			want:       " {k1}=\"value\"",
+		},
+		{
+			keysValues: []interface{}{1, "test"},
+			want:       " %!s(int=1)=\"test\"",
+		},
+		{
+			keysValues: []interface{}{map[string]string{"k": "key"}, "value"},
+			want:       " map[k:key]=\"value\"",
+		},
 	}
 
 	for _, d := range testKVList {
