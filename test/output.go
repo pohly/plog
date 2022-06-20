@@ -367,6 +367,27 @@ I output.go:<LINE>] "test" firstKey=1 secondKey=3
 			expectedOutput: `I output.go:<LINE>] "marshaler recursion" obj={}
 `,
 		},
+		"handle integer keys": {
+			withValues: []interface{}{1, "value", 2, "value2"},
+			text:       "integer keys",
+			values:     []interface{}{"akey", "avalue", "akey2"},
+			expectedOutput: `I output.go:<LINE>] "integer keys" %!s(int=1)="value" %!s(int=2)="value2" akey="avalue" akey2="(MISSING)"
+`,
+		},
+		"struct keys": {
+			withValues: []interface{}{struct{ name string }{"name"}, "value", "test", "other value"},
+			text:       "struct keys",
+			values:     []interface{}{"key", "val"},
+			expectedOutput: `I output.go:<LINE>] "struct keys" {name}="value" test="other value" key="val"
+`,
+		},
+		"map keys": {
+			withValues: []interface{}{},
+			text:       "map keys",
+			values:     []interface{}{map[string]bool{"test": true}, "test"},
+			expectedOutput: `I output.go:<LINE>] "map keys" map[test:%!s(bool=true)]="test"
+`,
+		},
 	}
 	for n, test := range tests {
 		t.Run(n, func(t *testing.T) {

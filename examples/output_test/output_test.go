@@ -63,7 +63,7 @@ func TestTextloggerOutput(t *testing.T) {
 	})
 }
 
-// TestTextloggerOutput tests the zapr, directly and as backend.
+// TestZaprOutput tests the zapr, directly and as backend.
 func TestZaprOutput(t *testing.T) {
 	newLogger := func(out io.Writer, v int, vmodule string) logr.Logger {
 		return newZaprLogger(out, v)
@@ -122,6 +122,18 @@ func TestKlogrStackZapr(t *testing.T) {
 		`I output.go:<LINE>] "both odd" basekey1="basevar1" basekey2="(MISSING)" akey="avalue" akey2="(MISSING)"
 `: `{"caller":"test/output.go:<LINE>","msg":"both odd","v":0,"basekey1":"basevar1","basekey2":"(MISSING)","akey":"avalue","akey2":"(MISSING)"}
 `,
+		`I output.go:<LINE>] "integer keys" %!s(int=1)="value" %!s(int=2)="value2" akey="avalue" akey2="(MISSING)"
+`: `{"caller":"test/output.go:<LINE>","msg":"non-string key argument passed to logging, ignoring all later arguments","invalid key":1}
+{"caller":"test/output.go:<LINE>","msg":"integer keys","v":0}
+`,
+		`I output.go:<LINE>] "struct keys" {name}="value" test="other value" key="val"
+`: `{"caller":"test/output.go:<LINE>","msg":"non-string key argument passed to logging, ignoring all later arguments","invalid key":{}}
+{"caller":"test/output.go:<LINE>","msg":"struct keys","v":0}
+`,
+		`I output.go:<LINE>] "map keys" map[test:%!s(bool=true)]="test"
+`: `{"caller":"test/output.go:<LINE>","msg":"non-string key argument passed to logging, ignoring all later arguments","invalid key":{"test":true}}
+{"caller":"test/output.go:<LINE>","msg":"map keys","v":0}
+`,
 	} {
 		mapping[key] = value
 	}
@@ -172,6 +184,18 @@ func TestKlogrInternalStackZapr(t *testing.T) {
 
 		`I output.go:<LINE>] "both odd" basekey1="basevar1" basekey2="(MISSING)" akey="avalue" akey2="(MISSING)"
 `: `{"caller":"test/output.go:<LINE>","msg":"both odd","v":0,"basekey1":"basevar1","basekey2":"(MISSING)","akey":"avalue","akey2":"(MISSING)"}
+`,
+		`I output.go:<LINE>] "integer keys" %!s(int=1)="value" %!s(int=2)="value2" akey="avalue" akey2="(MISSING)"
+`: `{"caller":"test/output.go:<LINE>","msg":"non-string key argument passed to logging, ignoring all later arguments","invalid key":1}
+{"caller":"test/output.go:<LINE>","msg":"integer keys","v":0}
+`,
+		`I output.go:<LINE>] "struct keys" {name}="value" test="other value" key="val"
+`: `{"caller":"test/output.go:<LINE>","msg":"non-string key argument passed to logging, ignoring all later arguments","invalid key":{}}
+{"caller":"test/output.go:<LINE>","msg":"struct keys","v":0}
+`,
+		`I output.go:<LINE>] "map keys" map[test:%!s(bool=true)]="test"
+`: `{"caller":"test/output.go:<LINE>","msg":"non-string key argument passed to logging, ignoring all later arguments","invalid key":{"test":true}}
+{"caller":"test/output.go:<LINE>","msg":"map keys","v":0}
 `,
 	} {
 		mapping[key] = value
