@@ -91,6 +91,33 @@ func BenchmarkOutput(b *testing.B) {
 		"fail-verbosity-check": func(value interface{}) {
 			klog.V(verbosityThreshold+1).InfoS("test", "key", value)
 		},
+		"non-standard-int-key-check": func(value interface{}) {
+			klog.InfoS("test", 1, value)
+		},
+		"non-standard-struct-key-check": func(value interface{}) {
+			klog.InfoS("test", struct{ key string }{"test"}, value)
+		},
+		"non-standard-map-key-check": func(value interface{}) {
+			klog.InfoS("test", map[string]bool{"key": true}, value)
+		},
+		"pass-verbosity-non-standard-int-key-check": func(value interface{}) {
+			klog.V(verbosityThreshold).InfoS("test", 1, value)
+		},
+		"pass-verbosity-non-standard-struct-key-check": func(value interface{}) {
+			klog.V(verbosityThreshold).InfoS("test", struct{ key string }{"test"}, value)
+		},
+		"pass-verbosity-non-standard-map-key-check": func(value interface{}) {
+			klog.V(verbosityThreshold).InfoS("test", map[string]bool{"key": true}, value)
+		},
+		"fail-verbosity-non-standard-int-key-check": func(value interface{}) {
+			klog.V(verbosityThreshold+1).InfoS("test", 1, value)
+		},
+		"fail-verbosity-non-standard-struct-key-check": func(value interface{}) {
+			klog.V(verbosityThreshold+1).InfoS("test", struct{ key string }{"test"}, value)
+		},
+		"fail-verbosity-non-standard-map-key-check": func(value interface{}) {
+			klog.V(verbosityThreshold+1).InfoS("test", map[string]bool{"key": true}, value)
+		},
 	}
 
 	for name, config := range configs {

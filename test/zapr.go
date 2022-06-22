@@ -218,6 +218,21 @@ I output.go:<LINE>] "odd WithValues" keyWithoutValue="(MISSING)"
 		`I output.go:<LINE>] "hello" what="one world"
 `: `{"caller":"test/output.go:<LINE>","msg":"hello","v":1,"what":"one world"}
 `,
+
+		`I output.go:<LINE>] "integer keys" %!s(int=1)="value" %!s(int=2)="value2" akey="avalue" akey2="(MISSING)"
+`: `{"caller":"test/output.go:<WITH-VALUES>","msg":"non-string key argument passed to logging, ignoring all later arguments","invalid key":1}
+{"caller":"test/output.go:<LINE>","msg":"odd number of arguments passed as key-value pairs for logging","ignored key":"akey2"}
+{"caller":"test/output.go:<LINE>","msg":"integer keys","v":0,"akey":"avalue"}
+`,
+
+		`I output.go:<LINE>] "struct keys" {name}="value" test="other value" key="val"
+`: `{"caller":"test/output.go:<WITH-VALUES>","msg":"non-string key argument passed to logging, ignoring all later arguments","invalid key":{}}
+{"caller":"test/output.go:<LINE>","msg":"struct keys","v":0,"key":"val"}
+`,
+		`I output.go:<LINE>] "map keys" map[test:%!s(bool=true)]="test"
+`: `{"caller":"test/output.go:<LINE>","msg":"non-string key argument passed to logging, ignoring all later arguments","invalid key":{"test":true}}
+{"caller":"test/output.go:<LINE>","msg":"map keys","v":0}
+`,
 	}
 }
 
@@ -291,6 +306,18 @@ I output.go:<LINE>] "test" firstKey=1 secondKey=3
 {"caller":"test/output.go:<LINE>","msg":"test","v":0,"firstKey":1,"secondKey":2}
 {"caller":"test/output.go:<LINE>","msg":"test","v":0,"firstKey":1}
 {"caller":"test/output.go:<LINE>","msg":"test","v":0,"firstKey":1,"secondKey":3}
+`,
+		`I output.go:<LINE>] "integer keys" %!s(int=1)="value" %!s(int=2)="value2" akey="avalue" akey2="(MISSING)"
+`: `{"caller":"test/output.go:<LINE>","msg":"non-string key argument passed to logging, ignoring all later arguments","invalid key":1}
+{"caller":"test/output.go:<LINE>","msg":"integer keys","v":0}
+`,
+		`I output.go:<LINE>] "struct keys" {name}="value" test="other value" key="val"
+`: `{"caller":"test/output.go:<LINE>","msg":"non-string key argument passed to logging, ignoring all later arguments","invalid key":{}}
+{"caller":"test/output.go:<LINE>","msg":"struct keys","v":0}
+`,
+		`I output.go:<LINE>] "map keys" map[test:%!s(bool=true)]="test"
+`: `{"caller":"test/output.go:<LINE>","msg":"non-string key argument passed to logging, ignoring all later arguments","invalid key":{"test":true}}
+{"caller":"test/output.go:<LINE>","msg":"map keys","v":0}
 `,
 	} {
 		mapping[key] = value
