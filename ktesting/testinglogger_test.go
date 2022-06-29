@@ -5,13 +5,15 @@ Copyright 2020 Intel Coporation.
 SPDX-License-Identifier: Apache-2.0
 */
 
-package ktesting
+package ktesting_test
 
 import (
 	"bytes"
 	"errors"
 	"fmt"
 	"testing"
+
+	"k8s.io/klog/v2/ktesting"
 )
 
 func TestInfo(t *testing.T) {
@@ -104,7 +106,7 @@ func TestInfo(t *testing.T) {
 	for n, test := range tests {
 		t.Run(n, func(t *testing.T) {
 			var buffer logToBuf
-			klogr := NewLogger(&buffer, NewConfig())
+			klogr := ktesting.NewLogger(&buffer, ktesting.NewConfig())
 			for _, name := range test.names {
 				klogr = klogr.WithName(name)
 			}
@@ -125,7 +127,7 @@ func TestInfo(t *testing.T) {
 }
 
 func TestCallDepth(t *testing.T) {
-	logger := NewLogger(t, NewConfig())
+	logger := ktesting.NewLogger(t, ktesting.NewConfig())
 	logger.Info("hello world")
 }
 
