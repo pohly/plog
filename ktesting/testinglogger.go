@@ -76,7 +76,7 @@ type NopTL struct{}
 func (n NopTL) Helper()                 {}
 func (n NopTL) Log(args ...interface{}) {}
 
-var _TL = NopTL{}
+var _ TL = NopTL{}
 
 // NewLogger constructs a new logger for the given test interface.
 //
