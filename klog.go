@@ -550,7 +550,11 @@ type loggingT struct {
 	vmap map[uintptr]Level
 }
 
-var logging loggingT
+var logging = loggingT{
+	settings: settings{
+		contextualLoggingEnabled: true,
+	},
+}
 
 // setVState sets a consistent state for V logging.
 // l.mu is held.
