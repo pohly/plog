@@ -18,7 +18,7 @@ limitations under the License.
 // Package textlogger contains an implementation of the logr interface
 // which is producing the exact same output as klog.
 //
-// Experimental
+// # Experimental
 //
 // Notice: This package is EXPERIMENTAL and may be changed or removed in a
 // later release.
@@ -50,7 +50,7 @@ var (
 
 // NewLogger constructs a new logger.
 //
-// Experimental
+// # Experimental
 //
 // Notice: This function is EXPERIMENTAL and may be changed or removed in a
 // later release. The behavior of the returned Logger may change.
