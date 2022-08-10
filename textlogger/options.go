@@ -31,7 +31,7 @@ import (
 //
 // Must be constructed with NewConfig.
 //
-// Experimental
+// # Experimental
 //
 // Notice: This type is EXPERIMENTAL and may be changed or removed in a
 // later release.
@@ -42,7 +42,7 @@ type Config struct {
 
 // ConfigOption implements functional parameters for NewConfig.
 //
-// Experimental
+// # Experimental
 //
 // Notice: This type is EXPERIMENTAL and may be changed or removed in a
 // later release.
@@ -66,7 +66,7 @@ func VerbosityFlagName(name string) ConfigOption {
 // VModulFlagName overrides the default -vmodule for the per-module
 // verbosity levels.
 //
-// Experimental
+// # Experimental
 //
 // Notice: This function is EXPERIMENTAL and may be changed or removed in a
 // later release.
@@ -80,7 +80,7 @@ func VModuleFlagName(name string) ConfigOption {
 // See https://github.com/kubernetes/community/blob/9406b4352fe2d5810cb21cc3cb059ce5886de157/contributors/devel/sig-instrumentation/logging.md#logging-conventions
 // for log level conventions in Kubernetes.
 //
-// Experimental
+// # Experimental
 //
 // Notice: This function is EXPERIMENTAL and may be changed or removed in a
 // later release.
@@ -92,7 +92,7 @@ func Verbosity(level int) ConfigOption {
 
 // Output overrides stderr as the output stream.
 //
-// Experimental
+// # Experimental
 //
 // Notice: This function is EXPERIMENTAL and may be changed or removed in a
 // later release.
@@ -105,7 +105,7 @@ func Output(output io.Writer) ConfigOption {
 // NewConfig returns a configuration with recommended defaults and optional
 // modifications. Command line flags are not bound to any FlagSet yet.
 //
-// Experimental
+// # Experimental
 //
 // Notice: This function is EXPERIMENTAL and may be changed or removed in a
 // later release.
@@ -129,7 +129,7 @@ func NewConfig(opts ...ConfigOption) *Config {
 
 // AddFlags registers the command line flags that control the configuration.
 //
-// Experimental
+// # Experimental
 //
 // Notice: This function is EXPERIMENTAL and may be changed or removed in a
 // later release.
