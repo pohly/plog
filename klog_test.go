@@ -669,6 +669,10 @@ func BenchmarkKObj(b *testing.B) {
 // emits a log entry because verbosity is lower than 5.
 // For performance when the result of KObjs gets formatted,
 // see examples/benchmarks.
+//
+// This uses two different patterns:
+// - directly calling klog.V(5).Info
+// - guarding the call with Enabled
 func BenchmarkKObjs(b *testing.B) {
 	for length := 0; length <= 100; length += 10 {
 		b.Run(fmt.Sprintf("%d", length), func(b *testing.B) {
@@ -676,15 +680,117 @@ func BenchmarkKObjs(b *testing.B) {
 			for i := 0; i < length; i++ {
 				arg[i] = test.KMetadataMock{Name: "a", NS: "a"}
 			}
-			b.ResetTimer()
 
-			var r interface{}
-			for i := 0; i < b.N; i++ {
-				r = KObjs(arg)
-			}
-			result = r
+			b.Run("simple", func(b *testing.B) {
+				b.ResetTimer()
+				for i := 0; i < b.N; i++ {
+					V(5).InfoS("benchmark", "objs", KObjs(arg))
+				}
+			})
+
+			b.Run("conditional", func(b *testing.B) {
+				b.ResetTimer()
+				for i := 0; i < b.N; i++ {
+					if klogV := V(5); klogV.Enabled() {
+						klogV.InfoS("benchmark", "objs", KObjs(arg))
+					}
+				}
+			})
 		})
 	}
+}
+
+// BenchmarkKObjSlice corresponds to BenchmarkKObjs except that it uses KObjSlice
+func BenchmarkKObjSlice(b *testing.B) {
+	for length := 0; length <= 100; length += 10 {
+		b.Run(fmt.Sprintf("%d", length), func(b *testing.B) {
+			arg := make([]interface{}, length)
+			for i := 0; i < length; i++ {
+				arg[i] = test.KMetadataMock{Name: "a", NS: "a"}
+			}
+
+			b.Run("simple", func(b *testing.B) {
+				b.ResetTimer()
+				for i := 0; i < b.N; i++ {
+					V(5).InfoS("benchmark", "objs", KObjSlice(arg))
+				}
+			})
+
+			b.Run("conditional", func(b *testing.B) {
+				b.ResetTimer()
+				for i := 0; i < b.N; i++ {
+					if klogV := V(5); klogV.Enabled() {
+						klogV.InfoS("benchmark", "objs", KObjSlice(arg))
+					}
+				}
+			})
+		})
+	}
+}
+
+// BenchmarkScalars corresponds to BenchmarkKObjs except that it avoids function
+// calls for the parameters.
+func BenchmarkScalars(b *testing.B) {
+	b.Run("simple", func(b *testing.B) {
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
+			V(5).InfoS("benchmark", "str", "hello world", "int", 42)
+		}
+	})
+
+	b.Run("conditional", func(b *testing.B) {
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
+			if klogV := V(5); klogV.Enabled() {
+				klogV.InfoS("benchmark", "str", "hello world", "int", 42)
+			}
+		}
+	})
+}
+
+// BenchmarkScalarsWithLogger is the same as BenchmarkScalars except that it uses
+// a go-logr instance.
+func BenchmarkScalarsWithLogger(b *testing.B) {
+	logger := Background()
+	b.Run("simple", func(b *testing.B) {
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
+			logger.V(5).Info("benchmark", "str", "hello world", "int", 42)
+		}
+	})
+
+	b.Run("conditional", func(b *testing.B) {
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
+			if loggerV := logger.V(5); loggerV.Enabled() {
+				loggerV.Info("benchmark", "str", "hello world", "int", 42)
+			}
+		}
+	})
+}
+
+// BenchmarKObjSliceWithLogger is the same as BenchmarkKObjSlice except that it
+// uses a go-logr instance and a slice with a single entry. BenchmarkKObjSlice
+// shows that the overhead for KObjSlice is constant and doesn't depend on the
+// slice length when logging is off.
+func BenchmarkKObjSliceWithLogger(b *testing.B) {
+	logger := Background()
+	arg := []interface{}{test.KMetadataMock{Name: "a", NS: "a"}}
+	b.Run("simple", func(b *testing.B) {
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
+			logger.V(5).Info("benchmark", "objs", KObjSlice(arg))
+		}
+	})
+
+	b.Run("conditional", func(b *testing.B) {
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
+			if loggerV := logger.V(5); loggerV.Enabled() {
+				loggerV.Info("benchmark", "objs", KObjSlice(arg))
+			}
+		}
+	})
 }
 
 func BenchmarkLogs(b *testing.B) {
