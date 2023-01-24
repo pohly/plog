@@ -2196,7 +2196,7 @@ func TestSettingsDeepCopy(t *testing.T) {
 	logger := logr.Discard()
 
 	settings := settings{
-		logger: &logger,
+		logger: &logWriter{Logger: logger},
 		vmodule: moduleSpec{
 			filter: []modulePat{
 				{pattern: "a"},
