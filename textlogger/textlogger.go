@@ -134,6 +134,10 @@ func (l *tlogger) print(err error, s severity.Severity, msg string, kvList []int
 	l.config.co.output.Write(b.Bytes())
 }
 
+func (l *tlogger) WriteKlogBuffer(data []byte) {
+	l.config.co.output.Write(data)
+}
+
 // WithName returns a new logr.Logger with the specified name appended.  klogr
 // uses '/' characters to separate name elements.  Callers should not pass '/'
 // in the provided name string, but this library does not actually enforce that.
@@ -152,5 +156,15 @@ func (l *tlogger) WithValues(kvList ...interface{}) logr.LogSink {
 	return &new
 }
 
+// KlogBufferWriter is implemented by the textlogger LogSink.
+type KlogBufferWriter interface {
+	// WriteKlogBuffer takes a pre-formatted buffer prepared by klog and
+	// writes it unchanged to the output stream. Can be used with
+	// klog.WriteKlogBuffer when setting a logger through
+	// klog.SetLoggerWithOptions.
+	WriteKlogBuffer([]byte)
+}
+
 var _ logr.LogSink = &tlogger{}
 var _ logr.CallDepthLogSink = &tlogger{}
+var _ KlogBufferWriter = &tlogger{}
