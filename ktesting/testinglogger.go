@@ -42,7 +42,6 @@ limitations under the License.
 package ktesting
 
 import (
-	"bytes"
 	"strings"
 	"sync"
 	"time"
@@ -50,8 +49,10 @@ import (
 	"github.com/go-logr/logr"
 
 	"k8s.io/klog/v2"
+	"k8s.io/klog/v2/internal/buffer"
 	"k8s.io/klog/v2/internal/dbg"
 	"k8s.io/klog/v2/internal/serialize"
+	"k8s.io/klog/v2/internal/severity"
 	"k8s.io/klog/v2/internal/verbosity"
 )
 
@@ -230,19 +231,19 @@ type Underlier interface {
 	GetBuffer() Buffer
 }
 
-type buffer struct {
+type logBuffer struct {
 	mutex sync.Mutex
 	text  strings.Builder
 	log   Log
 }
 
-func (b *buffer) String() string {
+func (b *logBuffer) String() string {
 	b.mutex.Lock()
 	defer b.mutex.Unlock()
 	return b.text.String()
 }
 
-func (b *buffer) Data() Log {
+func (b *logBuffer) Data() Log {
 	b.mutex.Lock()
 	defer b.mutex.Unlock()
 	return b.log.DeepCopy()
@@ -263,7 +264,7 @@ type tloggerShared struct {
 
 	testName  string
 	config    *Config
-	buffer    buffer
+	buffer    logBuffer
 	callDepth int
 }
 
@@ -318,9 +319,9 @@ func (l tlogger) Info(level int, msg string, kvList ...interface{}) {
 	}
 
 	l.shared.t.Helper()
-	buffer := &bytes.Buffer{}
-	serialize.MergeAndFormatKVs(buffer, l.values, kvList)
-	l.log(LogInfo, msg, level, buffer, nil, kvList)
+	buf := buffer.GetBuffer()
+	serialize.MergeAndFormatKVs(&buf.Buffer, l.values, kvList)
+	l.log(LogInfo, msg, level, buf, nil, kvList)
 }
 
 func (l tlogger) Enabled(level int) bool {
@@ -336,24 +337,28 @@ func (l tlogger) Error(err error, msg string, kvList ...interface{}) {
 	}
 
 	l.shared.t.Helper()
-	buffer := &bytes.Buffer{}
+	buf := buffer.GetBuffer()
 	if err != nil {
-		serialize.KVFormat(buffer, "err", err)
+		serialize.KVFormat(&buf.Buffer, "err", err)
 	}
-	serialize.MergeAndFormatKVs(buffer, l.values, kvList)
-	l.log(LogError, msg, 0, buffer, err, kvList)
+	serialize.MergeAndFormatKVs(&buf.Buffer, l.values, kvList)
+	l.log(LogError, msg, 0, buf, err, kvList)
 }
 
-func (l tlogger) log(what LogType, msg string, level int, buffer *bytes.Buffer, err error, kvList []interface{}) {
+func (l tlogger) log(what LogType, msg string, level int, buf *buffer.Buffer, err error, kvList []interface{}) {
 	l.shared.t.Helper()
-	args := []interface{}{what}
+	s := severity.InfoLog
+	if what == LogError {
+		s = severity.ErrorLog
+	}
+	args := []interface{}{buf.SprintHeader(s, time.Now())}
 	if l.prefix != "" {
 		args = append(args, l.prefix+":")
 	}
 	args = append(args, msg)
-	if buffer.Len() > 0 {
+	if buf.Len() > 0 {
 		// Skip leading space inserted by serialize.KVListFormat.
-		args = append(args, string(buffer.Bytes()[1:]))
+		args = append(args, string(buf.Bytes()[1:]))
 	}
 	l.shared.t.Log(args...)
 
