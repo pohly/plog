@@ -25,7 +25,12 @@ import (
 )
 
 func ExampleUnderlier() {
-	logger := ktesting.NewLogger(ktesting.NopTL{}, ktesting.NewConfig(ktesting.Verbosity(4)))
+	logger := ktesting.NewLogger(ktesting.NopTL{},
+		ktesting.NewConfig(
+			ktesting.Verbosity(4),
+			ktesting.BufferLogs(true),
+		),
+	)
 
 	logger.Error(errors.New("failure"), "I failed", "what", "something")
 	logger.WithValues("request", 42).WithValues("anotherValue", "fish").Info("hello world")
@@ -68,4 +73,25 @@ func ExampleUnderlier() {
 	// log entry #2: {Timestamp:0001-01-01 00:00:00 +0000 UTC Type:INFO Prefix: Message:hello world 2 Verbosity:0 Err:<nil> WithKVList:[request 42 anotherValue fish] ParameterKVList:[yetAnotherValue thanks]}
 	// log entry #3: {Timestamp:0001-01-01 00:00:00 +0000 UTC Type:INFO Prefix:example Message:with name Verbosity:0 Err:<nil> WithKVList:[] ParameterKVList:[]}
 	// log entry #4: {Timestamp:0001-01-01 00:00:00 +0000 UTC Type:INFO Prefix: Message:higher verbosity Verbosity:4 Err:<nil> WithKVList:[] ParameterKVList:[]}
+}
+
+func ExampleDefaults() {
+	var buffer ktesting.BufferTL
+	logger := ktesting.NewLogger(&buffer, ktesting.NewConfig())
+
+	logger.Error(errors.New("failure"), "I failed", "what", "something")
+	logger.V(5).Info("Logged at level 5.")
+	logger.V(6).Info("Not logged at level 6.")
+
+	testingLogger, ok := logger.GetSink().(ktesting.Underlier)
+	if !ok {
+		panic("Should have had a ktesting LogSink!?")
+	}
+	fmt.Printf(">> %s <<\n", testingLogger.GetBuffer().String())       // Should be empty.
+	fmt.Print(headerRe.ReplaceAllString(buffer.String(), "${1}...] ")) // Should not be empty.
+
+	// Output:
+	// >>  <<
+	// E...] I failed err="failure" what="something"
+	// I...] Logged at level 5.
 }

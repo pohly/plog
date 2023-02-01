@@ -42,6 +42,7 @@ limitations under the License.
 package ktesting
 
 import (
+	"fmt"
 	"strings"
 	"sync"
 	"time"
@@ -80,6 +81,23 @@ func (n NopTL) Helper()                 {}
 func (n NopTL) Log(args ...interface{}) {}
 
 var _ TL = NopTL{}
+
+// BufferTL implements TL with an in-memory buffer.
+//
+// # Experimental
+//
+// Notice: This type is EXPERIMENTAL and may be changed or removed in a
+// later release.
+type BufferTL struct {
+	strings.Builder
+}
+
+func (n *BufferTL) Helper() {}
+func (n *BufferTL) Log(args ...interface{}) {
+	n.Builder.WriteString(fmt.Sprintln(args...))
+}
+
+var _ TL = &BufferTL{}
 
 // NewLogger constructs a new logger for the given test interface.
 //
@@ -361,6 +379,10 @@ func (l tlogger) log(what LogType, msg string, level int, buf *buffer.Buffer, er
 		args = append(args, string(buf.Bytes()[1:]))
 	}
 	l.shared.t.Log(args...)
+
+	if !l.shared.config.co.bufferLogs {
+		return
+	}
 
 	l.shared.buffer.mutex.Lock()
 	defer l.shared.buffer.mutex.Unlock()

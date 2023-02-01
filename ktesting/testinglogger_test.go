@@ -21,6 +21,8 @@ import (
 	"k8s.io/klog/v2/ktesting"
 )
 
+var headerRe = regexp.MustCompile(`([IE])[[:digit:]]{4} [[:digit:]]{2}:[[:digit:]]{2}:[[:digit:]]{2}\.[[:digit:]]{6}\] `)
+
 func TestInfo(t *testing.T) {
 	tests := map[string]struct {
 		text           string
@@ -124,7 +126,7 @@ func TestInfo(t *testing.T) {
 			}
 
 			actual := buffer.String()
-			actual = regexp.MustCompile(`([IE])[[:digit:]]{4} [[:digit:]]{2}:[[:digit:]]{2}:[[:digit:]]{2}\.[[:digit:]]{6}\] `).ReplaceAllString(actual, `${1}xxx `)
+			actual = headerRe.ReplaceAllString(actual, `${1}xxx `)
 			if actual != test.expectedOutput {
 				t.Errorf("Expected:\n%sActual:\n%s\n", test.expectedOutput, actual)
 			}

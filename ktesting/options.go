@@ -50,6 +50,7 @@ type configOptions struct {
 	verbosityFlagName string
 	vmoduleFlagName   string
 	verbosityDefault  int
+	bufferLogs        bool
 }
 
 // VerbosityFlagName overrides the default -testing.v for the verbosity level.
@@ -91,6 +92,21 @@ func VModuleFlagName(name string) ConfigOption {
 func Verbosity(level int) ConfigOption {
 	return func(co *configOptions) {
 		co.verbosityDefault = level
+	}
+}
+
+// BufferLogs controls whether log entries are captured in memory in addition
+// to being printed. Off by default. Unit tests that want to verify that
+// log entries are emitted as expected can turn this on and then retrieve
+// the captured log through the Underlier LogSink interface.
+//
+// # Experimental
+//
+// Notice: This function is EXPERIMENTAL and may be changed or removed in a
+// later release.
+func BufferLogs(enabled bool) ConfigOption {
+	return func(co *configOptions) {
+		co.bufferLogs = enabled
 	}
 }
 

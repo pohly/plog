@@ -16,7 +16,8 @@ import (
 )
 
 func TestContextual(t *testing.T) {
-	logger, ctx := ktesting.NewTestContext(t)
+	var buffer ktesting.BufferTL
+	logger, ctx := ktesting.NewTestContext(&buffer)
 
 	doSomething(ctx)
 
@@ -33,8 +34,14 @@ func TestContextual(t *testing.T) {
 	}
 
 	actual := testingLogger.GetBuffer().String()
-	expected := `INFO hello world
-INFO foo: hello also from me
+	if actual != "" {
+		t.Errorf("testinglogger should not have buffered, got:\n%s", actual)
+	}
+
+	actual = buffer.String()
+	actual = headerRe.ReplaceAllString(actual, "${1}xxx] ")
+	expected := `Ixxx] hello world
+Ixxx] foo: hello also from me
 `
 	if actual != expected {
 		t.Errorf("mismatch in captured output, expected:\n%s\ngot:\n%s\n", expected, actual)
