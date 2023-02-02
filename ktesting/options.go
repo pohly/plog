@@ -20,6 +20,7 @@ import (
 	"flag"
 	"strconv"
 
+	"k8s.io/klog/v2/internal/serialize"
 	"k8s.io/klog/v2/internal/verbosity"
 )
 
@@ -47,10 +48,25 @@ type Config struct {
 type ConfigOption func(co *configOptions)
 
 type configOptions struct {
+	anyToString       serialize.AnyToStringFunc
 	verbosityFlagName string
 	vmoduleFlagName   string
 	verbosityDefault  int
 	bufferLogs        bool
+}
+
+// AnyToString overrides the default formatter for values that are not
+// supported directly by klog. The default is `fmt.Sprintf("%+v")`.
+// The formatter must not panic.
+//
+// # Experimental
+//
+// Notice: This function is EXPERIMENTAL and may be changed or removed in a
+// later release.
+func AnyToString(anyToString func(value interface{}) string) ConfigOption {
+	return func(co *configOptions) {
+		co.anyToString = anyToString
+	}
 }
 
 // VerbosityFlagName overrides the default -testing.v for the verbosity level.

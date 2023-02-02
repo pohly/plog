@@ -118,6 +118,9 @@ func NewLogger(t TL, c *Config) logr.Logger {
 			config: c,
 		},
 	}
+	if c.co.anyToString != nil {
+		l.shared.formatter.AnyToStringHook = c.co.anyToString
+	}
 
 	type testCleanup interface {
 		Cleanup(func())
@@ -280,6 +283,7 @@ type tloggerShared struct {
 	// it logs after test completion.
 	goroutineWarningDone bool
 
+	formatter serialize.Formatter
 	testName  string
 	config    *Config
 	buffer    logBuffer
@@ -338,7 +342,7 @@ func (l tlogger) Info(level int, msg string, kvList ...interface{}) {
 
 	l.shared.t.Helper()
 	buf := buffer.GetBuffer()
-	serialize.MergeAndFormatKVs(&buf.Buffer, l.values, kvList)
+	l.shared.formatter.MergeAndFormatKVs(&buf.Buffer, l.values, kvList)
 	l.log(LogInfo, msg, level, buf, nil, kvList)
 }
 
@@ -357,9 +361,9 @@ func (l tlogger) Error(err error, msg string, kvList ...interface{}) {
 	l.shared.t.Helper()
 	buf := buffer.GetBuffer()
 	if err != nil {
-		serialize.KVFormat(&buf.Buffer, "err", err)
+		l.shared.formatter.KVFormat(&buf.Buffer, "err", err)
 	}
-	serialize.MergeAndFormatKVs(&buf.Buffer, l.values, kvList)
+	l.shared.formatter.MergeAndFormatKVs(&buf.Buffer, l.values, kvList)
 	l.log(LogError, msg, 0, buf, err, kvList)
 }
 
