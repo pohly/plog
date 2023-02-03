@@ -55,6 +55,17 @@ func GetBuffer() *Buffer {
 
 // PutBuffer returns a buffer to the free list.
 func PutBuffer(b *Buffer) {
+	if b.Len() >= 256 {
+		// Let big buffers die a natural death, without relying on
+		// sync.Pool behavior. The documentation implies that items may
+		// get deallocated while stored there ("If the Pool holds the
+		// only reference when this [= be removed automatically]
+		// happens, the item might be deallocated."), but
+		// https://github.com/golang/go/issues/23199 leans more towards
+		// having such a size limit.
+		return
+	}
+
 	buffers.Put(b)
 }
 
