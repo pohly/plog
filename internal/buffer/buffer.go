@@ -110,7 +110,8 @@ func (buf *Buffer) someDigits(i, d int) int {
 	return copy(buf.Tmp[i:], buf.Tmp[j:])
 }
 
-// FormatHeader formats a log header using the provided file name and line number.
+// FormatHeader formats a log header using the provided file name and line number
+// and writes it into the buffer.
 func (buf *Buffer) FormatHeader(s severity.Severity, file string, line int, now time.Time) {
 	if line < 0 {
 		line = 0 // not a real line number, but acceptable to someDigits
@@ -145,4 +146,31 @@ func (buf *Buffer) FormatHeader(s severity.Severity, file string, line int, now 
 	buf.Tmp[n+1] = ']'
 	buf.Tmp[n+2] = ' '
 	buf.Write(buf.Tmp[:n+3])
+}
+
+// SprintHeader formats a log header and returns a string. This is a simpler
+// version of FormatHeader for use in ktesting.
+func (buf *Buffer) SprintHeader(s severity.Severity, now time.Time) string {
+	if s > severity.FatalLog {
+		s = severity.InfoLog // for safety.
+	}
+
+	// Avoid Fprintf, for speed. The format is so simple that we can do it quickly by hand.
+	// It's worth about 3X. Fprintf is hard.
+	_, month, day := now.Date()
+	hour, minute, second := now.Clock()
+	// Lmmdd hh:mm:ss.uuuuuu threadid file:line]
+	buf.Tmp[0] = severity.Char[s]
+	buf.twoDigits(1, int(month))
+	buf.twoDigits(3, day)
+	buf.Tmp[5] = ' '
+	buf.twoDigits(6, hour)
+	buf.Tmp[8] = ':'
+	buf.twoDigits(9, minute)
+	buf.Tmp[11] = ':'
+	buf.twoDigits(12, second)
+	buf.Tmp[14] = '.'
+	buf.nDigits(6, 15, now.Nanosecond()/1000, '0')
+	buf.Tmp[21] = ']'
+	return string(buf.Tmp[:22])
 }

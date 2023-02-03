@@ -21,6 +21,8 @@ import (
 	"k8s.io/klog/v2/ktesting"
 )
 
+var headerRe = regexp.MustCompile(`([IE])[[:digit:]]{4} [[:digit:]]{2}:[[:digit:]]{2}:[[:digit:]]{2}\.[[:digit:]]{6}\] `)
+
 func TestInfo(t *testing.T) {
 	tests := map[string]struct {
 		text           string
@@ -33,78 +35,78 @@ func TestInfo(t *testing.T) {
 		"should log with values passed to keysAndValues": {
 			text:          "test",
 			keysAndValues: []interface{}{"akey", "avalue"},
-			expectedOutput: `INFO test akey="avalue"
+			expectedOutput: `Ixxx test akey="avalue"
 `,
 		},
 		"should support single name": {
 			names:         []string{"hello"},
 			text:          "test",
 			keysAndValues: []interface{}{"akey", "avalue"},
-			expectedOutput: `INFO hello: test akey="avalue"
+			expectedOutput: `Ixxx hello: test akey="avalue"
 `,
 		},
 		"should support multiple names": {
 			names:         []string{"hello", "world"},
 			text:          "test",
 			keysAndValues: []interface{}{"akey", "avalue"},
-			expectedOutput: `INFO hello/world: test akey="avalue"
+			expectedOutput: `Ixxx hello/world: test akey="avalue"
 `,
 		},
 		"should not print duplicate keys with the same value": {
 			text:          "test",
 			keysAndValues: []interface{}{"akey", "avalue", "akey", "avalue"},
-			expectedOutput: `INFO test akey="avalue" akey="avalue"
+			expectedOutput: `Ixxx test akey="avalue" akey="avalue"
 `,
 		},
 		"should only print the last duplicate key when the values are passed to Info": {
 			text:          "test",
 			keysAndValues: []interface{}{"akey", "avalue", "akey", "avalue2"},
-			expectedOutput: `INFO test akey="avalue" akey="avalue2"
+			expectedOutput: `Ixxx test akey="avalue" akey="avalue2"
 `,
 		},
 		"should only print the duplicate key that is passed to Info if one was passed to the logger": {
 			withValues:    []interface{}{"akey", "avalue"},
 			text:          "test",
 			keysAndValues: []interface{}{"akey", "avalue"},
-			expectedOutput: `INFO test akey="avalue"
+			expectedOutput: `Ixxx test akey="avalue"
 `,
 		},
 		"should only print the key passed to Info when one is already set on the logger": {
 			withValues:    []interface{}{"akey", "avalue"},
 			text:          "test",
 			keysAndValues: []interface{}{"akey", "avalue2"},
-			expectedOutput: `INFO test akey="avalue2"
+			expectedOutput: `Ixxx test akey="avalue2"
 `,
 		},
 		"should correctly handle odd-numbers of KVs": {
 			text:          "test",
 			keysAndValues: []interface{}{"akey", "avalue", "akey2"},
-			expectedOutput: `INFO test akey="avalue" akey2="(MISSING)"
+			expectedOutput: `Ixxx test akey="avalue" akey2="(MISSING)"
 `,
 		},
 		"should correctly html characters": {
 			text:          "test",
 			keysAndValues: []interface{}{"akey", "<&>"},
-			expectedOutput: `INFO test akey="<&>"
+			expectedOutput: `Ixxx test akey="<&>"
 `,
 		},
 		"should correctly handle odd-numbers of KVs in both log values and Info args": {
 			withValues:    []interface{}{"basekey1", "basevar1", "basekey2"},
 			text:          "test",
 			keysAndValues: []interface{}{"akey", "avalue", "akey2"},
-			expectedOutput: `INFO test basekey1="basevar1" basekey2="(MISSING)" akey="avalue" akey2="(MISSING)"
+			expectedOutput: `Ixxx test basekey1="basevar1" basekey2="(MISSING)" akey="avalue" akey2="(MISSING)"
 `,
 		},
 		"should correctly print regular error types": {
 			text:          "test",
 			keysAndValues: []interface{}{"err", errors.New("whoops")},
-			expectedOutput: `INFO test err="whoops"
+			expectedOutput: `Ixxx test err="whoops"
 `,
 		},
 		"should correctly print regular error types when using logr.Error": {
 			text: "test",
 			err:  errors.New("whoops"),
-			expectedOutput: `ERROR test err="whoops"
+			expectedOutput: `Exxx test err="whoops"
 `,
 		},
 	}
@@ -124,6 +126,7 @@ func TestInfo(t *testing.T) {
 			}
 
 			actual := buffer.String()
+			actual = headerRe.ReplaceAllString(actual, `${1}xxx `)
 			if actual != test.expectedOutput {
 				t.Errorf("Expected:\n%sActual:\n%s\n", test.expectedOutput, actual)
 			}
