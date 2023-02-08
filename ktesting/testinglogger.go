@@ -107,6 +107,9 @@ var _ TL = &BufferTL{}
 // that output will be printed via the global klog logger with
 // `<test name> leaked goroutine` as prefix.
 //
+// Verbosity can be modified at any time through the Config.V and
+// Config.VModule API.
+//
 // # Experimental
 //
 // Notice: This type is EXPERIMENTAL and may be changed or removed in a
