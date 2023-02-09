@@ -36,8 +36,22 @@ import (
 // Notice: This type is EXPERIMENTAL and may be changed or removed in a
 // later release.
 type Config struct {
-	*verbosity.VState
-	co configOptions
+	vstate *verbosity.VState
+	co     configOptions
+}
+
+// Verbosity returns a value instance that can be used to query (via String) or
+// modify (via Set) the verbosity threshold. This is thread-safe and can be
+// done at runtime.
+func (c *Config) Verbosity() flag.Value {
+	return c.vstate.V()
+}
+
+// VModule returns a value instance that can be used to query (via String) or
+// modify (via Set) the vmodule settings. This is thread-safe and can be done
+// at runtime.
+func (c *Config) VModule() flag.Value {
+	return c.vstate.VModule()
 }
 
 // ConfigOption implements functional parameters for NewConfig.
@@ -111,7 +125,7 @@ func Output(output io.Writer) ConfigOption {
 // later release.
 func NewConfig(opts ...ConfigOption) *Config {
 	c := &Config{
-		VState: verbosity.New(),
+		vstate: verbosity.New(),
 		co: configOptions{
 			verbosityFlagName: "v",
 			vmoduleFlagName:   "vmodule",
@@ -123,7 +137,7 @@ func NewConfig(opts ...ConfigOption) *Config {
 		opt(&c.co)
 	}
 
-	c.V().Set(strconv.FormatInt(int64(c.co.verbosityDefault), 10))
+	c.Verbosity().Set(strconv.FormatInt(int64(c.co.verbosityDefault), 10))
 	return c
 }
 
@@ -134,6 +148,6 @@ func NewConfig(opts ...ConfigOption) *Config {
 // Notice: This function is EXPERIMENTAL and may be changed or removed in a
 // later release.
 func (c *Config) AddFlags(fs *flag.FlagSet) {
-	fs.Var(c.V(), c.co.verbosityFlagName, "number for the log level verbosity of the testing logger")
+	fs.Var(c.Verbosity(), c.co.verbosityFlagName, "number for the log level verbosity of the testing logger")
 	fs.Var(c.VModule(), c.co.vmoduleFlagName, "comma-separated list of pattern=N log level settings for files matching the patterns")
 }

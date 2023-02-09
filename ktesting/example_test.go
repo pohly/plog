@@ -98,3 +98,26 @@ func ExampleNewLogger() {
 	// E...] I failed err="failure" what="something" data={field:1}
 	// I...] Logged at level 5.
 }
+
+func ExampleConfig_Verbosity() {
+	var buffer ktesting.BufferTL
+	config := ktesting.NewConfig(ktesting.Verbosity(1))
+	logger := ktesting.NewLogger(&buffer, config)
+
+	logger.Info("initial verbosity", "v", config.Verbosity().String())
+	logger.V(2).Info("now you don't see me")
+	if err := config.Verbosity().Set("2"); err != nil {
+		logger.Error(err, "setting verbosity to 2")
+	}
+	logger.V(2).Info("now you see me")
+	if err := config.Verbosity().Set("1"); err != nil {
+		logger.Error(err, "setting verbosity to 1")
+	}
+	logger.V(2).Info("now I'm gone again")
+
+	fmt.Print(headerRe.ReplaceAllString(buffer.String(), "${1}...] "))
+
+	// Output:
+	// I...] initial verbosity v="1"
+	// I...] now you see me
+}

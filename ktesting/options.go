@@ -39,6 +39,20 @@ type Config struct {
 	co     configOptions
 }
 
+// Verbosity returns a value instance that can be used to query (via String) or
+// modify (via Set) the verbosity threshold. This is thread-safe and can be
+// done at runtime.
+func (c *Config) Verbosity() flag.Value {
+	return c.vstate.V()
+}
+
+// VModule returns a value instance that can be used to query (via String) or
+// modify (via Set) the vmodule settings. This is thread-safe and can be done
+// at runtime.
+func (c *Config) VModule() flag.Value {
+	return c.vstate.VModule()
+}
+
 // ConfigOption implements functional parameters for NewConfig.
 //
 // # Experimental
