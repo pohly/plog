@@ -39,6 +39,7 @@ import (
 	"github.com/go-logr/logr"
 
 	"k8s.io/klog/v2"
+	"k8s.io/klog/v2/textlogger"
 )
 
 // InitKlog must be called in a test to configure klog for testing.
@@ -577,7 +578,7 @@ func Output(t *testing.T, config OutputConfig) {
 
 			if config.AsBackend {
 				testOutput(t, printWithKlogLine-1, func(buffer *bytes.Buffer) {
-					klog.SetLogger(config.NewLogger(buffer, 10, test.vmodule))
+					setLogger(config.NewLogger(buffer, 10, test.vmodule))
 					printWithKlog(test)
 				})
 				return
@@ -765,10 +766,11 @@ func Output(t *testing.T, config OutputConfig) {
 		for i, test := range tests {
 			t.Run(test.name, func(t *testing.T) {
 				var buffer bytes.Buffer
+				haveWriteKlogBuffer := false
 				if config.NewLogger == nil {
 					klog.SetOutput(&buffer)
 				} else {
-					klog.SetLogger(config.NewLogger(&buffer, 10, ""))
+					haveWriteKlogBuffer = setLogger(config.NewLogger(&buffer, 10, ""))
 					defer klog.ClearLogger()
 				}
 				test.logFunc()
@@ -789,6 +791,7 @@ func Output(t *testing.T, config OutputConfig) {
 				// result, including a trailing newline, to
 				// Logger.Info.
 				if config.NewLogger != nil &&
+					!haveWriteKlogBuffer &&
 					!strings.HasSuffix(test.name, "S") &&
 					!strings.HasSuffix(test.name, "SDepth") {
 					// klog: I output.go:<LINE>] hello world
@@ -851,7 +854,7 @@ func Benchmark(b *testing.B, config OutputConfig) {
 			}
 
 			if config.AsBackend {
-				klog.SetLogger(config.NewLogger(io.Discard, 10, ""))
+				setLogger(config.NewLogger(io.Discard, 10, ""))
 				for i := 0; i < b.N; i++ {
 					printWithKlog(test)
 				}
@@ -869,6 +872,17 @@ func Benchmark(b *testing.B, config OutputConfig) {
 			}
 		})
 	}
+}
+
+func setLogger(logger logr.Logger) bool {
+	haveWriteKlogBuffer := false
+	var opts []klog.LoggerOption
+	if writer, ok := logger.GetSink().(textlogger.KlogBufferWriter); ok {
+		opts = append(opts, klog.WriteKlogBuffer(writer.WriteKlogBuffer))
+		haveWriteKlogBuffer = true
+	}
+	klog.SetLoggerWithOptions(logger, opts...)
+	return haveWriteKlogBuffer
 }
 
 func copySlice(in []interface{}) []interface{} {
