@@ -595,6 +595,15 @@ func Output(t *testing.T, config OutputConfig) {
 	}
 
 	if config.NewLogger == nil || config.AsBackend {
+		configStruct := klog.Format(myConfig{typeMeta: typeMeta{Kind: "config"}, RealField: 42})
+		configStructOutput := `I output.go:<LINE>] "Format" config=<
+	{
+	  "Kind": "config",
+	  "RealField": 42
+	}
+ >
+`
+
 		// Test all klog output functions.
 		//
 		// Each test case must be defined with the same number of
@@ -759,6 +768,11 @@ func Output(t *testing.T, config OutputConfig) {
 				name:    "V().ErrorS",
 				logFunc: func() { klog.V(1).ErrorS(errors.New("hello"), "one world") },
 				output:  "E output.go:<LINE>] \"one world\" err=\"hello\"\n",
+			},
+			{
+				name:    "Format InfoS",
+				logFunc: func() { klog.InfoS("Format", "config", configStruct) },
+				output:  configStructOutput,
 			},
 		}
 		_, _, line, _ := runtime.Caller(0)
@@ -964,3 +978,26 @@ func (f faultyError) Error() string {
 }
 
 var _ error = faultyError{}
+
+// typeMeta implements fmt.Stringer and logr.Marshaler. config below
+// inherits those (incomplete!) implementations.
+type typeMeta struct {
+	Kind string
+}
+
+func (t typeMeta) String() string {
+	return "kind is " + t.Kind
+}
+
+func (t typeMeta) MarshalLog() interface{} {
+	return t.Kind
+}
+
+type myConfig struct {
+	typeMeta
+
+	RealField int
+}
+
+var _ logr.Marshaler = myConfig{}
+var _ fmt.Stringer = myConfig{}

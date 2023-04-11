@@ -229,6 +229,15 @@ I output.go:<LINE>] "odd WithValues" keyWithoutValue="(MISSING)"
 `: `{"caller":"test/output.go:<LINE>","msg":"non-string key argument passed to logging, ignoring all later arguments","invalid key":{"test":true}}
 {"caller":"test/output.go:<LINE>","msg":"map keys","v":0}
 `,
+
+		`I output.go:<LINE>] "Format" config=<
+	{
+	  "Kind": "config",
+	  "RealField": 42
+	}
+ >
+`: `{"caller":"test/output.go:<LINE>","msg":"Format","v":0,"config":{"Kind":"config","RealField":42}}
+`,
 	}
 }
 
