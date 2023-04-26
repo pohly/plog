@@ -406,6 +406,24 @@ I output.go:<LINE>] "test" firstKey=1 secondKey=3
 		expectedOutput: `I output.go:<LINE>] "map keys" map[test:%!s(bool=true)]="test"
 `,
 	},
+	"map values": {
+		text:   "maps",
+		values: []interface{}{"s", map[string]string{"hello": "world"}, "i", map[int]int{1: 2, 3: 4}},
+		expectedOutput: `I output.go:<LINE>] "maps" s=map[hello:world] i=map[1:2 3:4]
+`,
+	},
+	"slice values": {
+		text:   "slices",
+		values: []interface{}{"s", []string{"hello", "world"}, "i", []int{1, 2, 3}},
+		expectedOutput: `I output.go:<LINE>] "slices" s=[hello world] i=[1 2 3]
+`,
+	},
+	"struct values": {
+		text:   "structs",
+		values: []interface{}{"s", struct{ Name, Kind, hidden string }{Name: "worker", Kind: "pod", hidden: "ignore"}},
+		expectedOutput: `I output.go:<LINE>] "structs" s={Name:worker Kind:pod hidden:ignore}
+`,
+	},
 }
 
 func printWithLogger(logger logr.Logger, test testcase) {

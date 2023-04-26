@@ -238,6 +238,16 @@ I output.go:<LINE>] "odd WithValues" keyWithoutValue="(MISSING)"
  >
 `: `{"caller":"test/output.go:<LINE>","msg":"Format","v":0,"config":{"Kind":"config","RealField":42}}
 `,
+		`I output.go:<LINE>] "maps" s=map[hello:world] i=map[1:2 3:4]
+`: `{"caller":"test/output.go:<LINE>","msg":"maps","v":0,"s":{"hello":"world"},"i":{"1":2,"3":4}}
+`,
+
+		`I output.go:<LINE>] "slices" s=[hello world] i=[1 2 3]
+`: `{"caller":"test/output.go:<LINE>","msg":"slices","v":0,"s":["hello","world"],"i":[1,2,3]}
+`,
+		`I output.go:<LINE>] "structs" s={Name:worker Kind:pod hidden:ignore}
+`: `{"caller":"test/output.go:<LINE>","msg":"structs","v":0,"s":{"Name":"worker","Kind":"pod"}}
+`,
 	}
 }
 
