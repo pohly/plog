@@ -1164,10 +1164,7 @@ second value line`},
 		},
 		{
 			msg: `message`,
-			format: `I0102 15:04:05.067890    1234 klog_test.go:%d] "message" myData=<
-	{Data:This is some long text
-	with a line break.}
- >
+			format: `I0102 15:04:05.067890    1234 klog_test.go:%d] "message" myData={"Data":"This is some long text\nwith a line break."}
 `,
 			keysValues: []interface{}{"myData", myData},
 		},

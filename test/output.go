@@ -275,30 +275,30 @@ I output.go:<LINE>] "test" firstKey=1 secondKey=3
 `,
 	},
 	"KObjs": {
-		text: "test",
+		text: "KObjs",
 		values: []interface{}{"pods",
 			klog.KObjs([]interface{}{
 				&kmeta{Name: "pod-1", Namespace: "kube-system"},
 				&kmeta{Name: "pod-2", Namespace: "kube-system"},
 			})},
-		expectedOutput: `I output.go:<LINE>] "test" pods=[kube-system/pod-1 kube-system/pod-2]
+		expectedOutput: `I output.go:<LINE>] "KObjs" pods=[{"name":"pod-1","namespace":"kube-system"},{"name":"pod-2","namespace":"kube-system"}]
 `,
 	},
 	"KObjSlice okay": {
-		text: "test",
+		text: "KObjSlice",
 		values: []interface{}{"pods",
 			klog.KObjSlice([]interface{}{
 				&kmeta{Name: "pod-1", Namespace: "kube-system"},
 				&kmeta{Name: "pod-2", Namespace: "kube-system"},
 			})},
-		expectedOutput: `I output.go:<LINE>] "test" pods=[kube-system/pod-1 kube-system/pod-2]
+		expectedOutput: `I output.go:<LINE>] "KObjSlice" pods=["kube-system/pod-1","kube-system/pod-2"]
 `,
 	},
 	"KObjSlice nil arg": {
 		text: "test",
 		values: []interface{}{"pods",
 			klog.KObjSlice(nil)},
-		expectedOutput: `I output.go:<LINE>] "test" pods=[]
+		expectedOutput: `I output.go:<LINE>] "test" pods=null
 `,
 	},
 	"KObjSlice int arg": {
@@ -315,14 +315,14 @@ I output.go:<LINE>] "test" firstKey=1 secondKey=3
 				&kmeta{Name: "pod-1", Namespace: "kube-system"},
 				nil,
 			})},
-		expectedOutput: `I output.go:<LINE>] "test" pods=[kube-system/pod-1 <nil>]
+		expectedOutput: `I output.go:<LINE>] "test" pods=["kube-system/pod-1",null]
 `,
 	},
 	"KObjSlice ints": {
 		text: "test",
 		values: []interface{}{"ints",
 			klog.KObjSlice([]int{1, 2, 3})},
-		expectedOutput: `I output.go:<LINE>] "test" ints=[<KObjSlice needs a slice of values implementing KMetadata, got type int>]
+		expectedOutput: `I output.go:<LINE>] "test" ints=["<KObjSlice needs a slice of values implementing KMetadata, got type int>"]
 `,
 	},
 	"regular error types as value": {
@@ -409,19 +409,36 @@ I output.go:<LINE>] "test" firstKey=1 secondKey=3
 	"map values": {
 		text:   "maps",
 		values: []interface{}{"s", map[string]string{"hello": "world"}, "i", map[int]int{1: 2, 3: 4}},
-		expectedOutput: `I output.go:<LINE>] "maps" s=map[hello:world] i=map[1:2 3:4]
+		expectedOutput: `I output.go:<LINE>] "maps" s={"hello":"world"} i={"1":2,"3":4}
 `,
 	},
 	"slice values": {
 		text:   "slices",
 		values: []interface{}{"s", []string{"hello", "world"}, "i", []int{1, 2, 3}},
-		expectedOutput: `I output.go:<LINE>] "slices" s=[hello world] i=[1 2 3]
+		expectedOutput: `I output.go:<LINE>] "slices" s=["hello","world"] i=[1,2,3]
 `,
 	},
 	"struct values": {
 		text:   "structs",
 		values: []interface{}{"s", struct{ Name, Kind, hidden string }{Name: "worker", Kind: "pod", hidden: "ignore"}},
-		expectedOutput: `I output.go:<LINE>] "structs" s={Name:worker Kind:pod hidden:ignore}
+		expectedOutput: `I output.go:<LINE>] "structs" s={"Name":"worker","Kind":"pod"}
+`,
+	},
+	"klog.Format": {
+		text:   "klog.Format",
+		values: []interface{}{"s", klog.Format(struct{ Name, Kind, hidden string }{Name: "worker", Kind: "pod", hidden: "ignore"})},
+		expectedOutput: `I output.go:<LINE>] "klog.Format" s=<
+	{
+	  "Name": "worker",
+	  "Kind": "pod"
+	}
+ >
+`,
+	},
+	"cyclic list": {
+		text:   "cycle",
+		values: []interface{}{"list", newCyclicList()},
+		expectedOutput: `I output.go:<LINE>] "cycle" list="<internal error: json: unsupported value: encountered a cycle via *test.myList>"
 `,
 	},
 }
@@ -1019,3 +1036,16 @@ type myConfig struct {
 
 var _ logr.Marshaler = myConfig{}
 var _ fmt.Stringer = myConfig{}
+
+// This is a linked list. It can contain a cycle, which cannot be expressed in JSON.
+type myList struct {
+	Value int
+	Next  *myList
+}
+
+func newCyclicList() *myList {
+	a := &myList{Value: 1}
+	b := &myList{Value: 2, Next: a}
+	a.Next = b
+	return a
+}
