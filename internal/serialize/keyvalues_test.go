@@ -69,7 +69,7 @@ func TestKvListFormat(t *testing.T) {
 	}{
 		{
 			keysValues: []interface{}{"data", &dummyStruct{key: "test", value: "info"}},
-			want:       " data=map[key-data:test value-data:info]",
+			want:       ` data={"key-data":"test","value-data":"info"}`,
 		},
 		{
 			keysValues: []interface{}{"data", &dummyStructWithStringMarshal{key: "test", value: "info"}},
@@ -89,15 +89,15 @@ func TestKvListFormat(t *testing.T) {
 				Y string
 				N time.Time
 			}{X: 76, Y: "strval", N: time.Date(2006, 1, 2, 15, 4, 5, .067890e9, time.UTC)}},
-			want: " pod=\"kubedns\" spec={X:76 Y:strval N:2006-01-02 15:04:05.06789 +0000 UTC}",
+			want: ` pod="kubedns" spec={"X":76,"Y":"strval","N":"2006-01-02T15:04:05.06789Z"}`,
 		},
 		{
 			keysValues: []interface{}{"pod", "kubedns", "values", []int{8, 6, 7, 5, 3, 0, 9}},
-			want:       " pod=\"kubedns\" values=[8 6 7 5 3 0 9]",
+			want:       " pod=\"kubedns\" values=[8,6,7,5,3,0,9]",
 		},
 		{
 			keysValues: []interface{}{"pod", "kubedns", "values", []string{"deployment", "svc", "configmap"}},
-			want:       " pod=\"kubedns\" values=[deployment svc configmap]",
+			want:       ` pod="kubedns" values=["deployment","svc","configmap"]`,
 		},
 		{
 			keysValues: []interface{}{"pod", "kubedns", "bytes", []byte("test case for byte array")},
@@ -123,7 +123,7 @@ No whitespace.`,
 		},
 		{
 			keysValues: []interface{}{"pod", "kubedns", "maps", map[string]int{"three": 4}},
-			want:       " pod=\"kubedns\" maps=map[three:4]",
+			want:       ` pod="kubedns" maps={"three":4}`,
 		},
 		{
 			keysValues: []interface{}{"pod", klog.KRef("kube-system", "kubedns"), "status", "ready"},
@@ -163,7 +163,7 @@ No whitespace.`,
 					Name: "mi-conf",
 				},
 			})},
-			want: " pods=[kube-system/kube-dns mi-conf]",
+			want: ` pods=[{"name":"kube-dns","namespace":"kube-system"},{"name":"mi-conf"}]`,
 		},
 		{
 			keysValues: []interface{}{"point-1", point{100, 200}, "point-2", emptyPoint},
