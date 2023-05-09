@@ -913,7 +913,7 @@ func TestCommandLine(t *testing.T) {
   -skip_log_headers
     	If true, avoid headers when opening log files (no effect when -logtostderr=true)
   -stderrthreshold value
-    	logs at or above this threshold go to stderr when writing to files and stderr (no effect when -logtostderr=true or -alsologtostderr=false) (default 2)
+    	logs at or above this threshold go to stderr when writing to files and stderr (no effect when -logtostderr=true or -alsologtostderr=true) (default 2)
   -v value
     	number for the log level verbosity
   -vmodule value
