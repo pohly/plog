@@ -1484,13 +1484,13 @@ func TestInfoWithLogr(t *testing.T) {
 		msg: "foo",
 		expected: testLogrEntry{
 			severity: severity.InfoLog,
-			msg:      "foo\n",
+			msg:      "foo",
 		},
 	}, {
 		msg: "",
 		expected: testLogrEntry{
 			severity: severity.InfoLog,
-			msg:      "\n",
+			msg:      "",
 		},
 	}}
 
