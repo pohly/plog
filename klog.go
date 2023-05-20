@@ -873,6 +873,9 @@ func (l *loggingT) output(s severity.Severity, logger *logWriter, buf *buffer.Bu
 		if logger.writeKlogBuffer != nil {
 			logger.writeKlogBuffer(data)
 		} else {
+			if len(data) > 0 && data[len(data)-1] == '\n' {
+				data = data[:len(data)-1]
+			}
 			// TODO: set 'severity' and caller information as structured log info
 			// keysAndValues := []interface{}{"severity", severityName[s], "file", file, "line", line}
 			if s == severity.ErrorLog {
