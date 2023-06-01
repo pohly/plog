@@ -34,7 +34,9 @@ import (
 	"k8s.io/klog/v2/textlogger"
 )
 
-func newLogger(out io.Writer, v int, vmodule string) logr.Logger {
+// newLogger is a test.OutputConfig.NewLogger callback which creates a zapr
+// logger. The vmodule parameter is ignored because zapr does not support that.
+func newLogger(out io.Writer, v int, _ string) logr.Logger {
 	return newZaprLogger(out, v)
 }
 

@@ -88,7 +88,7 @@ func (l *tlogger) Enabled(level int) bool {
 	return l.config.vstate.Enabled(verbosity.Level(level), 2+l.callDepth)
 }
 
-func (l *tlogger) Info(level int, msg string, kvList ...interface{}) {
+func (l *tlogger) Info(_ int, msg string, kvList ...interface{}) {
 	l.print(nil, severity.InfoLog, msg, kvList)
 }
 
@@ -145,18 +145,18 @@ func (l *tlogger) WriteKlogBuffer(data []byte) {
 // uses '/' characters to separate name elements.  Callers should not pass '/'
 // in the provided name string, but this library does not actually enforce that.
 func (l *tlogger) WithName(name string) logr.LogSink {
-	new := *l
+	clone := *l
 	if len(l.prefix) > 0 {
-		new.prefix = l.prefix + "/"
+		clone.prefix = l.prefix + "/"
 	}
-	new.prefix += name
-	return &new
+	clone.prefix += name
+	return &clone
 }
 
 func (l *tlogger) WithValues(kvList ...interface{}) logr.LogSink {
-	new := *l
-	new.values = serialize.WithValues(l.values, kvList)
-	return &new
+	clone := *l
+	clone.values = serialize.WithValues(l.values, kvList)
+	return &clone
 }
 
 // KlogBufferWriter is implemented by the textlogger LogSink.

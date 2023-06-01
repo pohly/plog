@@ -77,8 +77,8 @@ type TL interface {
 // later release.
 type NopTL struct{}
 
-func (n NopTL) Helper()                 {}
-func (n NopTL) Log(args ...interface{}) {}
+func (n NopTL) Helper()            {}
+func (n NopTL) Log(...interface{}) {}
 
 var _ TL = NopTL{}
 
