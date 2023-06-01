@@ -115,8 +115,10 @@ func pretty(value interface{}) string {
 	buffer := &bytes.Buffer{}
 	encoder := json.NewEncoder(buffer)
 	encoder.SetEscapeHTML(false)
-	encoder.Encode(value)
-	return strings.TrimSpace(string(buffer.Bytes()))
+	if err := encoder.Encode(value); err != nil {
+		return fmt.Sprintf("<<error: %v>>", err)
+	}
+	return strings.TrimSpace(buffer.String())
 }
 
 func (l *klogger) Info(level int, msg string, kvList ...interface{}) {

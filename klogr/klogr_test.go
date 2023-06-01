@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"k8s.io/klog/v2"
+	"k8s.io/klog/v2/internal/test/require"
 	"k8s.io/klog/v2/test"
 
 	"github.com/go-logr/logr"
@@ -205,7 +206,7 @@ func testOutput(t *testing.T, format string) {
 
 func TestOutput(t *testing.T) {
 	fs := test.InitKlog(t)
-	fs.Set("skip_headers", "true")
+	require.NoError(t, fs.Set("skip_headers", "true"))
 
 	formats := []string{
 		formatNew,

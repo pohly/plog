@@ -25,7 +25,6 @@ import (
 
 var (
 	_ = clock.PassiveClock(&FakePassiveClock{})
-	_ = clock.WithTicker(&FakeClock{})
 	_ = clock.Clock(&IntervalClock{})
 )
 
@@ -273,12 +272,6 @@ func (*IntervalClock) NewTimer(d time.Duration) clock.Timer {
 // TODO: make interval clock use FakeClock so this can be implemented.
 func (*IntervalClock) AfterFunc(d time.Duration, f func()) clock.Timer {
 	panic("IntervalClock doesn't implement AfterFunc")
-}
-
-// Tick is unimplemented, will panic.
-// TODO: make interval clock use FakeClock so this can be implemented.
-func (*IntervalClock) Tick(d time.Duration) <-chan time.Time {
-	panic("IntervalClock doesn't implement Tick")
 }
 
 // NewTicker has no implementation yet and is omitted.

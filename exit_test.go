@@ -27,12 +27,15 @@ func ExampleFlushAndExit() {
 
 	var fs flag.FlagSet
 	klog.InitFlags(&fs)
-	fs.Set("skip_headers", "true")
-	defer flag.Set("skip_headers", "false")
-	fs.Set("logtostderr", "false")
-	defer fs.Set("logtostderr", "true")
+	state := klog.CaptureState()
+	defer state.Restore()
+	if err := fs.Set("skip_headers", "true"); err != nil {
+		panic(err)
+	}
+	if err := fs.Set("logtostderr", "false"); err != nil {
+		panic(err)
+	}
 	klog.SetOutput(os.Stdout)
-	defer klog.SetOutput(nil)
 	klog.OsExit = func(exitCode int) {
 		fmt.Printf("os.Exit(%d)\n", exitCode)
 	}

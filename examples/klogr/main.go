@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 
+	"k8s.io/klog/examples/util/require"
 	"k8s.io/klog/v2"
 	"k8s.io/klog/v2/klogr"
 )
@@ -17,7 +18,7 @@ func (e myError) Error() string {
 
 func main() {
 	klog.InitFlags(nil)
-	flag.Set("v", "3")
+	require.NoError(flag.Set("v", "3"))
 	flag.Parse()
 	log := klogr.New().WithName("MyName").WithValues("user", "you")
 	log.Info("hello", "val1", 1, "val2", map[string]int{"k": 1})

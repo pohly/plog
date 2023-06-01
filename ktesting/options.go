@@ -160,7 +160,8 @@ func NewConfig(opts ...ConfigOption) *Config {
 	}
 
 	c.vstate = verbosity.New()
-	c.vstate.V().Set(strconv.FormatInt(int64(c.co.verbosityDefault), 10))
+	// Cannot fail for this input.
+	_ = c.vstate.V().Set(strconv.FormatInt(int64(c.co.verbosityDefault), 10))
 	return c
 }
 

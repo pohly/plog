@@ -32,7 +32,6 @@ func NewKlogr() Logger {
 // klogger is a subset of klogr/klogr.go. It had to be copied to break an
 // import cycle (klogr wants to use klog, and klog wants to use klogr).
 type klogger struct {
-	level     int
 	callDepth int
 	prefix    string
 	values    []interface{}

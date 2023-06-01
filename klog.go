@@ -518,9 +518,7 @@ type settings struct {
 func (s settings) deepCopy() settings {
 	// vmodule is a slice and would be shared, so we have copy it.
 	filter := make([]modulePat, len(s.vmodule.filter))
-	for i := range s.vmodule.filter {
-		filter[i] = s.vmodule.filter[i]
-	}
+	copy(filter, s.vmodule.filter)
 	s.vmodule.filter = filter
 
 	if s.logger != nil {
@@ -900,7 +898,7 @@ func (l *loggingT) output(s severity.Severity, logger *logWriter, buf *buffer.Bu
 					l.exit(err)
 				}
 			}
-			l.file[severity.InfoLog].Write(data)
+			_, _ = l.file[severity.InfoLog].Write(data)
 		} else {
 			if l.file[s] == nil {
 				if err := l.createFiles(s); err != nil {
@@ -910,20 +908,20 @@ func (l *loggingT) output(s severity.Severity, logger *logWriter, buf *buffer.Bu
 			}
 
 			if l.oneOutput {
-				l.file[s].Write(data)
+				_, _ = l.file[s].Write(data)
 			} else {
 				switch s {
 				case severity.FatalLog:
-					l.file[severity.FatalLog].Write(data)
+					_, _ = l.file[severity.FatalLog].Write(data)
 					fallthrough
 				case severity.ErrorLog:
-					l.file[severity.ErrorLog].Write(data)
+					_, _ = l.file[severity.ErrorLog].Write(data)
 					fallthrough
 				case severity.WarningLog:
-					l.file[severity.WarningLog].Write(data)
+					_, _ = l.file[severity.WarningLog].Write(data)
 					fallthrough
 				case severity.InfoLog:
-					l.file[severity.InfoLog].Write(data)
+					_, _ = l.file[severity.InfoLog].Write(data)
 				}
 			}
 		}
@@ -949,7 +947,7 @@ func (l *loggingT) output(s severity.Severity, logger *logWriter, buf *buffer.Bu
 		logExitFunc = func(error) {} // If we get a write error, we'll still exit below.
 		for log := severity.FatalLog; log >= severity.InfoLog; log-- {
 			if f := l.file[log]; f != nil { // Can be nil if -logtostderr is set.
-				f.Write(trace)
+				_, _ = f.Write(trace)
 			}
 		}
 		l.mu.Unlock()
@@ -1105,7 +1103,7 @@ const flushInterval = 5 * time.Second
 // flushDaemon periodically flushes the log file buffers.
 type flushDaemon struct {
 	mu       sync.Mutex
-	clock    clock.WithTicker
+	clock    clock.Clock
 	flush    func()
 	stopC    chan struct{}
 	stopDone chan struct{}
@@ -1113,7 +1111,7 @@ type flushDaemon struct {
 
 // newFlushDaemon returns a new flushDaemon. If the passed clock is nil, a
 // clock.RealClock is used.
-func newFlushDaemon(flush func(), tickClock clock.WithTicker) *flushDaemon {
+func newFlushDaemon(flush func(), tickClock clock.Clock) *flushDaemon {
 	if tickClock == nil {
 		tickClock = clock.RealClock{}
 	}
@@ -1204,8 +1202,8 @@ func (l *loggingT) flushAll() {
 	for s := severity.FatalLog; s >= severity.InfoLog; s-- {
 		file := l.file[s]
 		if file != nil {
-			file.Flush() // ignore error
-			file.Sync()  // ignore error
+			_ = file.Flush() // ignore error
+			_ = file.Sync()  // ignore error
 		}
 	}
 	if logging.loggerOptions.flush != nil {
@@ -1284,9 +1282,7 @@ func (l *loggingT) setV(pc uintptr) Level {
 	fn := runtime.FuncForPC(pc)
 	file, _ := fn.FileLine(pc)
 	// The file is something like /a/b/c/d.go. We want just the d.
-	if strings.HasSuffix(file, ".go") {
-		file = file[:len(file)-3]
-	}
+	file = strings.TrimSuffix(file, ".go")
 	if slash := strings.LastIndex(file, "/"); slash >= 0 {
 		file = file[slash+1:]
 	}

@@ -134,11 +134,11 @@ func (l *tlogger) print(err error, s severity.Severity, msg string, kvList []int
 	if b.Len() == 0 || b.Bytes()[b.Len()-1] != '\n' {
 		b.WriteByte('\n')
 	}
-	l.config.co.output.Write(b.Bytes())
+	_, _ = l.config.co.output.Write(b.Bytes())
 }
 
 func (l *tlogger) WriteKlogBuffer(data []byte) {
-	l.config.co.output.Write(data)
+	_, _ = l.config.co.output.Write(data)
 }
 
 // WithName returns a new logr.Logger with the specified name appended.  klogr

@@ -13,16 +13,17 @@ import (
 	"testing"
 
 	"k8s.io/klog/v2"
+	"k8s.io/klog/v2/internal/test/require"
 	"k8s.io/klog/v2/klogr"
 )
 
 func TestCallDepth(t *testing.T) {
 	klog.InitFlags(nil)
-	flag.CommandLine.Set("v", "10")
-	flag.CommandLine.Set("skip_headers", "false")
-	flag.CommandLine.Set("logtostderr", "false")
-	flag.CommandLine.Set("alsologtostderr", "false")
-	flag.CommandLine.Set("stderrthreshold", "10")
+	require.NoError(t, flag.CommandLine.Set("v", "10"))
+	require.NoError(t, flag.CommandLine.Set("skip_headers", "false"))
+	require.NoError(t, flag.CommandLine.Set("logtostderr", "false"))
+	require.NoError(t, flag.CommandLine.Set("alsologtostderr", "false"))
+	require.NoError(t, flag.CommandLine.Set("stderrthreshold", "10"))
 	flag.Parse()
 
 	t.Run("call-depth", func(t *testing.T) {

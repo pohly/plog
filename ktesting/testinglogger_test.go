@@ -18,6 +18,7 @@ import (
 	"testing"
 
 	"k8s.io/klog/v2"
+	"k8s.io/klog/v2/internal/test/require"
 	"k8s.io/klog/v2/ktesting"
 )
 
@@ -173,10 +174,10 @@ func TestStop(t *testing.T) {
 	var output bytes.Buffer
 	var fs flag.FlagSet
 	klog.InitFlags(&fs)
-	fs.Set("alsologtostderr", "false")
-	fs.Set("logtostderr", "false")
-	fs.Set("stderrthreshold", "FATAL")
-	fs.Set("one_output", "true")
+	require.NoError(t, fs.Set("alsologtostderr", "false"))
+	require.NoError(t, fs.Set("logtostderr", "false"))
+	require.NoError(t, fs.Set("stderrthreshold", "FATAL"))
+	require.NoError(t, fs.Set("one_output", "true"))
 	klog.SetOutput(&output)
 
 	var logger klog.Logger

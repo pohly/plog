@@ -40,6 +40,7 @@ import (
 	testingclock "k8s.io/klog/v2/internal/clock/testing"
 	"k8s.io/klog/v2/internal/severity"
 	"k8s.io/klog/v2/internal/test"
+	"k8s.io/klog/v2/internal/test/require"
 )
 
 // TODO: This test package should be refactored so that tests cannot
@@ -76,9 +77,7 @@ func (l *loggingT) swap(writers [severity.NumSeverity]flushSyncWriter) (old [sev
 	l.mu.Lock()
 	defer l.mu.Unlock()
 	old = l.file
-	for i, w := range writers {
-		logging.file[i] = w
-	}
+	logging.file = writers
 	return
 }
 
@@ -325,7 +324,7 @@ func TestV(t *testing.T) {
 	defer CaptureState().Restore()
 	setFlags()
 	defer logging.swap(logging.newBuffers())
-	logging.verbosity.Set("2")
+	require.NoError(t, logging.verbosity.Set("2"))
 	V(2).Info("test")
 	if !contains(severity.InfoLog, "I", t) {
 		t.Errorf("Info has wrong character: %q", contents(severity.InfoLog))
@@ -340,7 +339,7 @@ func TestVmoduleOn(t *testing.T) {
 	defer CaptureState().Restore()
 	setFlags()
 	defer logging.swap(logging.newBuffers())
-	logging.vmodule.Set("klog_test=2")
+	require.NoError(t, logging.vmodule.Set("klog_test=2"))
 	if !V(1).Enabled() {
 		t.Error("V not enabled for 1")
 	}
@@ -364,7 +363,7 @@ func TestVmoduleOff(t *testing.T) {
 	defer CaptureState().Restore()
 	setFlags()
 	defer logging.swap(logging.newBuffers())
-	logging.vmodule.Set("notthisfile=2")
+	require.NoError(t, logging.vmodule.Set("notthisfile=2"))
 	for i := 1; i <= 3; i++ {
 		if V(Level(i)).Enabled() {
 			t.Errorf("V enabled for %d", i)
@@ -456,7 +455,7 @@ func testVmoduleGlob(pat string, match bool, t *testing.T) {
 	defer CaptureState().Restore()
 	setFlags()
 	defer logging.swap(logging.newBuffers())
-	logging.vmodule.Set(pat)
+	require.NoError(t, logging.vmodule.Set(pat))
 	if V(2).Enabled() != match {
 		t.Errorf("incorrect match for %q: got %#v expected %#v", pat, V(2), match)
 	}
@@ -804,7 +803,7 @@ func BenchmarkLogs(b *testing.B) {
 	}
 	defer os.Remove(testFile.Name())
 
-	logging.verbosity.Set("0")
+	require.NoError(b, logging.verbosity.Set("0"))
 	logging.toStderr = false
 	logging.alsoToStderr = false
 	logging.stderrThreshold = severityValue{
@@ -875,14 +874,14 @@ func TestInitFlags(t *testing.T) {
 
 	fs1 := flag.NewFlagSet("test1", flag.PanicOnError)
 	InitFlags(fs1)
-	fs1.Set("log_dir", "/test1")
-	fs1.Set("log_file_max_size", "1")
+	require.NoError(t, fs1.Set("log_dir", "/test1"))
+	require.NoError(t, fs1.Set("log_file_max_size", "1"))
 	fs2 := flag.NewFlagSet("test2", flag.PanicOnError)
 	InitFlags(fs2)
 	if logging.logDir != "/test1" {
 		t.Fatalf("Expected log_dir to be %q, got %q", "/test1", logging.logDir)
 	}
-	fs2.Set("log_file_max_size", "2048")
+	require.NoError(t, fs2.Set("log_file_max_size", "2048"))
 	if logging.logFileMaxSizeMB != 2048 {
 		t.Fatal("Expected log_file_max_size to be 2048")
 	}
@@ -1170,7 +1169,7 @@ second value line`},
 		},
 	}
 
-	logging.verbosity.Set("2")
+	require.NoError(t, logging.verbosity.Set("2"))
 
 	for l := Level(0); l < Level(4); l++ {
 		for _, data := range testDataInfo {
