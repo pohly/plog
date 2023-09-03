@@ -144,8 +144,7 @@ func (l *klogger) Info(level int, msg string, kvList ...interface{}) {
 }
 
 func (l *klogger) Enabled(level int) bool {
-	// Skip this function and logr.Logger.Info where Enabled is called.
-	return klog.VDepth(l.callDepth+2, klog.Level(level)).Enabled()
+	return klog.VDepth(l.callDepth+1, klog.Level(level)).Enabled()
 }
 
 func (l *klogger) Error(err error, msg string, kvList ...interface{}) {

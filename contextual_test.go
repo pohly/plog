@@ -41,7 +41,7 @@ func ExampleSetLogger() {
 	// Output:
 	// logger after SetLogger: *klog.klogger
 	// logger after SetLoggerWithOptions with ContextualLogger(false): *klog.klogger
-	// logger after SetLoggerWithOptions with ContextualLogger(true): logr.discardLogSink
+	// logger after SetLoggerWithOptions with ContextualLogger(true): <nil>
 }
 
 func ExampleFlushLogger() {
