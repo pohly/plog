@@ -30,6 +30,9 @@ import (
 var (
 	// Pid is inserted into log headers. Can be overridden for tests.
 	Pid = os.Getpid()
+
+	// Time, if set, will be used instead of the actual current time.
+	Time *time.Time
 )
 
 // Buffer holds a single byte.Buffer for reuse. The zero value is ready for
@@ -121,6 +124,9 @@ func (buf *Buffer) FormatHeader(s severity.Severity, file string, line int, now 
 
 	// Avoid Fprintf, for speed. The format is so simple that we can do it quickly by hand.
 	// It's worth about 3X. Fprintf is hard.
+	if Time != nil {
+		now = *Time
+	}
 	_, month, day := now.Date()
 	hour, minute, second := now.Clock()
 	// Lmmdd hh:mm:ss.uuuuuu threadid file:line]
@@ -156,6 +162,9 @@ func (buf *Buffer) SprintHeader(s severity.Severity, now time.Time) string {
 
 	// Avoid Fprintf, for speed. The format is so simple that we can do it quickly by hand.
 	// It's worth about 3X. Fprintf is hard.
+	if Time != nil {
+		now = *Time
+	}
 	_, month, day := now.Date()
 	hour, minute, second := now.Clock()
 	// Lmmdd hh:mm:ss.uuuuuu threadid file:line]

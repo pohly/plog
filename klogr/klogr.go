@@ -46,6 +46,8 @@ func WithFormat(format Format) Option {
 
 // New returns a logr.Logger which serializes output itself
 // and writes it via klog.
+//
+// Deprecated: this uses a custom, out-dated output format. Use textlogger.NewLogger instead.
 func New() logr.Logger {
 	return NewWithOptions(WithFormat(FormatSerialize))
 }
@@ -53,6 +55,8 @@ func New() logr.Logger {
 // NewWithOptions returns a logr.Logger which serializes as determined
 // by the WithFormat option and writes via klog. The default is
 // FormatKlog.
+//
+// Deprecated: FormatSerialize is out-dated. For FormatKlog, use textlogger.NewLogger instead.
 func NewWithOptions(options ...Option) logr.Logger {
 	l := klogger{
 		level:  0,

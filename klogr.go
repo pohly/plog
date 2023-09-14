@@ -45,6 +45,7 @@ type klogger struct {
 	hasPrefix bool
 
 	values []interface{}
+	groups string
 }
 
 func (l *klogger) Init(info logr.RuntimeInfo) {

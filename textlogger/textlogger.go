@@ -63,6 +63,7 @@ type tlogger struct {
 	hasPrefix bool
 
 	values []interface{}
+	groups string
 	config *Config
 }
 
@@ -89,10 +90,6 @@ func (l *tlogger) Error(err error, msg string, kvList ...interface{}) {
 }
 
 func (l *tlogger) print(err error, s severity.Severity, msg string, kvList []interface{}) {
-	// Only create a new buffer if we don't have one cached.
-	b := buffer.GetBuffer()
-	defer buffer.PutBuffer(b)
-
 	// Determine caller.
 	// +1 for this frame, +1 for Info/Error.
 	_, file, line, ok := runtime.Caller(l.callDepth + 2)
@@ -101,13 +98,22 @@ func (l *tlogger) print(err error, s severity.Severity, msg string, kvList []int
 		line = 1
 	} else {
 		if slash := strings.LastIndex(file, "/"); slash >= 0 {
-			path := file
-			file = path[slash+1:]
+			file = file[slash+1:]
 		}
 	}
 
+	l.printWithInfos(file, line, time.Now(), err, s, msg, kvList)
+}
+
+func (l *tlogger) printWithInfos(file string, line int, now time.Time, err error, s severity.Severity, msg string, kvList []interface{}) {
+	// Only create a new buffer if we don't have one cached.
+	b := buffer.GetBuffer()
+	defer buffer.PutBuffer(b)
+
 	// Format header.
-	now := TimeNow()
+	if l.config.co.fixedTime != nil {
+		now = *l.config.co.fixedTime
+	}
 	b.FormatHeader(s, file, line, now)
 
 	// The message is always quoted, even if it contains line breaks.
