@@ -676,6 +676,10 @@ func (l *loggingT) println(s severity.Severity, logger *logWriter, filter LogFil
 }
 
 func (l *loggingT) printlnDepth(s severity.Severity, logger *logWriter, filter LogFilter, depth int, args ...interface{}) {
+	if false {
+		_ = fmt.Sprintln(args...) // cause vet to treat this function like fmt.Println
+	}
+
 	buf, file, line := l.header(s, depth)
 	// If a logger is set and doesn't support writing a formatted buffer,
 	// we clear the generated header as we rely on the backing
@@ -696,6 +700,10 @@ func (l *loggingT) print(s severity.Severity, logger *logWriter, filter LogFilte
 }
 
 func (l *loggingT) printDepth(s severity.Severity, logger *logWriter, filter LogFilter, depth int, args ...interface{}) {
+	if false {
+		_ = fmt.Sprint(args...) //  // cause vet to treat this function like fmt.Print
+	}
+
 	buf, file, line := l.header(s, depth)
 	// If a logger is set and doesn't support writing a formatted buffer,
 	// we clear the generated header as we rely on the backing
@@ -719,6 +727,10 @@ func (l *loggingT) printf(s severity.Severity, logger *logWriter, filter LogFilt
 }
 
 func (l *loggingT) printfDepth(s severity.Severity, logger *logWriter, filter LogFilter, depth int, format string, args ...interface{}) {
+	if false {
+		_ = fmt.Sprintf(format, args...) // cause vet to treat this function like fmt.Printf
+	}
+
 	buf, file, line := l.header(s, depth)
 	// If a logger is set and doesn't support writing a formatted buffer,
 	// we clear the generated header as we rely on the backing
