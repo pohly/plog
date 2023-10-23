@@ -8,6 +8,7 @@ require (
 	github.com/golang/glog v0.0.0-20160126235308-23def4e6c14b
 	go.uber.org/goleak v1.1.12
 	go.uber.org/zap v1.19.0
+	golang.org/x/tools v0.1.5
 	k8s.io/klog/v2 v2.30.0
 )
 
