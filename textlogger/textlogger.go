@@ -38,13 +38,17 @@ var (
 	TimeNow = time.Now
 )
 
+const (
+	// nameKey is used to log the `WithName` values as an additional attribute.
+	nameKey = "logger"
+)
+
 // NewLogger constructs a new logger.
 //
 // Verbosity can be modified at any time through the Config.V and
 // Config.VModule API.
 func NewLogger(c *Config) logr.Logger {
 	return logr.New(&tlogger{
-		prefix: "",
 		values: nil,
 		config: c,
 	})
@@ -52,9 +56,14 @@ func NewLogger(c *Config) logr.Logger {
 
 type tlogger struct {
 	callDepth int
-	prefix    string
-	values    []interface{}
-	config    *Config
+
+	// hasPrefix is true if the first entry in values is the special
+	// nameKey key/value. Such an entry gets added and later updated in
+	// WithName.
+	hasPrefix bool
+
+	values []interface{}
+	config *Config
 }
 
 func (l *tlogger) Init(info logr.RuntimeInfo) {
@@ -103,11 +112,6 @@ func (l *tlogger) print(err error, s severity.Severity, msg string, kvList []int
 	now := TimeNow()
 	b.FormatHeader(s, file, line, now)
 
-	// Inject WithName names into message.
-	if l.prefix != "" {
-		msg = l.prefix + ": " + msg
-	}
-
 	// The message is always quoted, even if it contains line breaks.
 	// If developers want multi-line output, they should use a small, fixed
 	// message and put the multi-line output into a value.
@@ -131,10 +135,23 @@ func (l *tlogger) WriteKlogBuffer(data []byte) {
 // in the provided name string, but this library does not actually enforce that.
 func (l *tlogger) WithName(name string) logr.LogSink {
 	clone := *l
-	if len(l.prefix) > 0 {
-		clone.prefix = l.prefix + "/"
+	if l.hasPrefix {
+		// Copy slice and modify value. No length checks and type
+		// assertions are needed because hasPrefix is only true if the
+		// first two elements exist and are key/value strings.
+		v := make([]interface{}, 0, len(l.values))
+		v = append(v, l.values...)
+		prefix, _ := v[1].(string)
+		v[1] = prefix + "." + name
+		clone.values = v
+	} else {
+		// Preprend new key/value pair.
+		v := make([]interface{}, 0, 2+len(l.values))
+		v = append(v, nameKey, name)
+		v = append(v, l.values...)
+		clone.values = v
+		clone.hasPrefix = true
 	}
-	clone.prefix += name
 	return &clone
 }
 

@@ -165,14 +165,14 @@ var tests = map[string]testcase{
 		withNames: []string{"me"},
 		text:      "test",
 		values:    []interface{}{"akey", "avalue"},
-		expectedOutput: `I output.go:<LINE>] "me: test" akey="avalue"
+		expectedOutput: `I output.go:<LINE>] "test" logger="me" akey="avalue"
 `,
 	},
 	"log with multiple names and values": {
 		withNames: []string{"hello", "world"},
 		text:      "test",
 		values:    []interface{}{"akey", "avalue"},
-		expectedOutput: `I output.go:<LINE>] "hello/world: test" akey="avalue"
+		expectedOutput: `I output.go:<LINE>] "test" logger="hello.world" akey="avalue"
 `,
 	},
 	"override single value": {
@@ -486,7 +486,7 @@ func printWithKlog(test testcase) {
 		}
 		return false
 	}
-	appendKV := func(withValues []interface{}) {
+	appendKV := func(withValues ...interface{}) {
 		if len(withValues)%2 != 0 {
 			withValues = append(withValues, "(MISSING)")
 		}
@@ -497,15 +497,18 @@ func printWithKlog(test testcase) {
 		}
 	}
 	// Here we need to emulate the handling of WithValues above.
-	appendKV(test.withValues)
+	if len(test.withNames) > 0 {
+		appendKV("logger", strings.Join(test.withNames, "."))
+	}
+	appendKV(test.withValues...)
 	kvs := [][]interface{}{copySlice(kv)}
 	if test.moreValues != nil {
-		appendKV(test.moreValues)
+		appendKV(test.moreValues...)
 		kvs = append(kvs, copySlice(kv), copySlice(kvs[0]))
 	}
 	if test.evenMoreValues != nil {
 		kv = copySlice(kvs[0])
-		appendKV(test.evenMoreValues)
+		appendKV(test.evenMoreValues...)
 		kvs = append(kvs, copySlice(kv))
 	}
 	for _, kv := range kvs {
@@ -513,9 +516,6 @@ func printWithKlog(test testcase) {
 			kv = append(kv, test.values...)
 		}
 		text := test.text
-		if len(test.withNames) > 0 {
-			text = strings.Join(test.withNames, "/") + ": " + text
-		}
 		if test.withHelper {
 			klogHelper(klog.Level(test.v), text, kv)
 		} else if test.err != nil {
