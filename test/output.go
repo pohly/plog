@@ -15,11 +15,6 @@ limitations under the License.
 */
 
 // Package test contains a reusable unit test for logging output and behavior.
-//
-// # Experimental
-//
-// Notice: This package is EXPERIMENTAL and may be changed or removed in a
-// later release.
 package test
 
 import (
@@ -48,11 +43,6 @@ import (
 //
 // The returned flag set has the klog flags registered. It can
 // be used to make further changes to the klog configuration.
-//
-// # Experimental
-//
-// Notice: This function is EXPERIMENTAL and may be changed or removed in a
-// later release.
 func InitKlog(tb testing.TB) *flag.FlagSet {
 	state := klog.CaptureState()
 	tb.Cleanup(state.Restore)
@@ -77,11 +67,6 @@ func InitKlog(tb testing.TB) *flag.FlagSet {
 }
 
 // OutputConfig contains optional settings for Output.
-//
-// # Experimental
-//
-// Notice: This type is EXPERIMENTAL and may be changed or removed in a
-// later release.
 type OutputConfig struct {
 	// NewLogger is called to create a new logger. If nil, output via klog
 	// is tested. Support for -vmodule is optional.  ClearLogger is called
@@ -553,12 +538,6 @@ var _, _, printWithKlogLine, _ = runtime.Caller(0) // anchor for finding the lin
 //
 // Loggers will be tested with direct calls to Info or
 // as backend for klog.
-//
-// # Experimental
-//
-// Notice: This function is EXPERIMENTAL and may be changed or removed in a
-// later release. The test cases and thus the expected output also may
-// change.
 func Output(t *testing.T, config OutputConfig) {
 	for n, test := range tests {
 		t.Run(n, func(t *testing.T) {
@@ -879,12 +858,6 @@ func Output(t *testing.T, config OutputConfig) {
 //
 // Loggers will be tested with direct calls to Info or
 // as backend for klog.
-//
-// # Experimental
-//
-// Notice: This function is EXPERIMENTAL and may be changed or removed in a
-// later release. The test cases and thus the expected output also may
-// change.
 func Benchmark(b *testing.B, config OutputConfig) {
 	for n, test := range tests {
 		b.Run(n, func(b *testing.B) {

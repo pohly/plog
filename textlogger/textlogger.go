@@ -17,11 +17,6 @@ limitations under the License.
 
 // Package textlogger contains an implementation of the logr interface
 // which is producing the exact same output as klog.
-//
-// # Experimental
-//
-// Notice: This package is EXPERIMENTAL and may be changed or removed in a
-// later release.
 package textlogger
 
 import (
@@ -40,11 +35,6 @@ import (
 
 var (
 	// TimeNow is used to retrieve the current time. May be changed for testing.
-	//
-	// Experimental
-	//
-	// Notice: This variable is EXPERIMENTAL and may be changed or removed in a
-	// later release.
 	TimeNow = time.Now
 )
 
@@ -52,11 +42,6 @@ var (
 //
 // Verbosity can be modified at any time through the Config.V and
 // Config.VModule API.
-//
-// # Experimental
-//
-// Notice: This function is EXPERIMENTAL and may be changed or removed in a
-// later release. The behavior of the returned Logger may change.
 func NewLogger(c *Config) logr.Logger {
 	return logr.New(&tlogger{
 		prefix: "",
