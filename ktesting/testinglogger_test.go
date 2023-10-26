@@ -216,7 +216,7 @@ func TestStop(t *testing.T) {
 	// have the < > markers.
 	//
 	// Full output:
-	// 	testinglogger_test.go:194] "TestStop/Sub leaked goroutine: WARNING: test kept at least one goroutine running after test completion" callstack=<
+	// 	testinglogger_test.go:194] "WARNING: test kept at least one goroutine running after test completion" logger="TestStop/Sub leaked goroutine" callstack=<
 	//        	goroutine 23 [running]:
 	//        	k8s.io/klog/v2/internal/dbg.Stacks(0x0)
 	//        		/nvme/gopath/src/k8s.io/klog/internal/dbg/dbg.go:34 +0x8a
@@ -233,11 +233,11 @@ func TestStop(t *testing.T) {
 	//         >
 	actual = regexp.MustCompile(`(?m)^\t.*?\n`).ReplaceAllString(actual, ``)
 
-	expected := fmt.Sprintf(`testinglogger_test.go:%d] "TestStop/Sub leaked goroutine: WARNING: test kept at least one goroutine running after test completion" callstack=<
+	expected := fmt.Sprintf(`testinglogger_test.go:%d] "WARNING: test kept at least one goroutine running after test completion" logger="TestStop/Sub leaked goroutine" callstack=<
  >
-testinglogger_test.go:%d] "TestStop/Sub leaked goroutine: simple info message"
-testinglogger_test.go:%d] "TestStop/Sub leaked goroutine: error message"
-testinglogger_test.go:%d] "TestStop/Sub leaked goroutine/me: complex info message" completed=true anotherValue=1
+testinglogger_test.go:%d] "simple info message" logger="TestStop/Sub leaked goroutine"
+testinglogger_test.go:%d] "error message" logger="TestStop/Sub leaked goroutine"
+testinglogger_test.go:%d] "complex info message" logger="TestStop/Sub leaked goroutine.me" completed=true anotherValue=1
 `,
 		line+1, line+1, line+2, line+3)
 	if actual != expected {

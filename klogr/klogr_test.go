@@ -42,7 +42,7 @@ func testOutput(t *testing.T, format string) {
 			klogr:         createLogger().V(0),
 			text:          "test",
 			keysAndValues: []interface{}{"akey", "avalue"},
-			expectedOutput: ` "msg"="test" "akey"="avalue"
+			expectedOutput: `"msg"="test" "akey"="avalue"
 `,
 			expectedKlogOutput: `"test" akey="avalue"
 `,
@@ -51,25 +51,29 @@ func testOutput(t *testing.T, format string) {
 			klogr:         createLogger().V(0).WithName("me"),
 			text:          "test",
 			keysAndValues: []interface{}{"akey", "avalue"},
-			expectedOutput: `me "msg"="test" "akey"="avalue"
+			// Sorted by keys.
+			expectedOutput: `"msg"="test" "akey"="avalue" "logger"="me"
 `,
-			expectedKlogOutput: `"me: test" akey="avalue"
+			// Not sorted by keys.
+			expectedKlogOutput: `"test" logger="me" akey="avalue"
 `,
 		},
 		"should log with multiple names and values passed to keysAndValues": {
 			klogr:         createLogger().V(0).WithName("hello").WithName("world"),
 			text:          "test",
 			keysAndValues: []interface{}{"akey", "avalue"},
-			expectedOutput: `hello/world "msg"="test" "akey"="avalue"
+			// Sorted by keys.
+			expectedOutput: `"msg"="test" "akey"="avalue" "logger"="hello.world"
 `,
-			expectedKlogOutput: `"hello/world: test" akey="avalue"
+			// Not sorted by keys.
+			expectedKlogOutput: `"test" logger="hello.world" akey="avalue"
 `,
 		},
 		"may print duplicate keys with the same value": {
 			klogr:         createLogger().V(0),
 			text:          "test",
 			keysAndValues: []interface{}{"akey", "avalue", "akey", "avalue"},
-			expectedOutput: ` "msg"="test" "akey"="avalue"
+			expectedOutput: `"msg"="test" "akey"="avalue"
 `,
 			expectedKlogOutput: `"test" akey="avalue" akey="avalue"
 `,
@@ -78,7 +82,7 @@ func testOutput(t *testing.T, format string) {
 			klogr:         createLogger().V(0),
 			text:          "test",
 			keysAndValues: []interface{}{"akey", "avalue", "akey", "avalue2"},
-			expectedOutput: ` "msg"="test" "akey"="avalue2"
+			expectedOutput: `"msg"="test" "akey"="avalue2"
 `,
 			expectedKlogOutput: `"test" akey="avalue" akey="avalue2"
 `,
@@ -87,7 +91,7 @@ func testOutput(t *testing.T, format string) {
 			klogr:         createLogger().WithValues("akey", "avalue"),
 			text:          "test",
 			keysAndValues: []interface{}{"akey", "avalue"},
-			expectedOutput: ` "msg"="test" "akey"="avalue"
+			expectedOutput: `"msg"="test" "akey"="avalue"
 `,
 			expectedKlogOutput: `"test" akey="avalue"
 `,
@@ -96,7 +100,7 @@ func testOutput(t *testing.T, format string) {
 			klogr:         createLogger().WithValues("akey9", "avalue9", "akey8", "avalue8", "akey1", "avalue1"),
 			text:          "test",
 			keysAndValues: []interface{}{"akey5", "avalue5", "akey4", "avalue4"},
-			expectedOutput: ` "msg"="test" "akey1"="avalue1" "akey4"="avalue4" "akey5"="avalue5" "akey8"="avalue8" "akey9"="avalue9"
+			expectedOutput: `"msg"="test" "akey1"="avalue1" "akey4"="avalue4" "akey5"="avalue5" "akey8"="avalue8" "akey9"="avalue9"
 `,
 			expectedKlogOutput: `"test" akey9="avalue9" akey8="avalue8" akey1="avalue1" akey5="avalue5" akey4="avalue4"
 `,
@@ -105,7 +109,7 @@ func testOutput(t *testing.T, format string) {
 			klogr:         createLogger().WithValues("akey", "avalue"),
 			text:          "test",
 			keysAndValues: []interface{}{"akey", "avalue2"},
-			expectedOutput: ` "msg"="test" "akey"="avalue2"
+			expectedOutput: `"msg"="test" "akey"="avalue2"
 `,
 			expectedKlogOutput: `"test" akey="avalue2"
 `,
@@ -114,7 +118,7 @@ func testOutput(t *testing.T, format string) {
 			klogr:         createLogger(),
 			text:          "test",
 			keysAndValues: []interface{}{"akey", "avalue", "akey2"},
-			expectedOutput: ` "msg"="test" "akey"="avalue" "akey2"="(MISSING)"
+			expectedOutput: `"msg"="test" "akey"="avalue" "akey2"="(MISSING)"
 `,
 			expectedKlogOutput: `"test" akey="avalue" akey2="(MISSING)"
 `,
@@ -124,7 +128,7 @@ func testOutput(t *testing.T, format string) {
 			text:          "test",
 			keysAndValues: []interface{}{"akey", "avalue", "akey2"},
 			// klogr format sorts all key/value pairs.
-			expectedOutput: ` "msg"="test" "akey"="avalue" "akey2"="(MISSING)" "keyWithoutValue"="(MISSING)"
+			expectedOutput: `"msg"="test" "akey"="avalue" "akey2"="(MISSING)" "keyWithoutValue"="(MISSING)"
 `,
 			expectedKlogOutput: `"test" keyWithoutValue="(MISSING)" akey="avalue" akey2="(MISSING)"
 `,
@@ -133,7 +137,7 @@ func testOutput(t *testing.T, format string) {
 			klogr:         createLogger(),
 			text:          "test",
 			keysAndValues: []interface{}{"akey", "<&>"},
-			expectedOutput: ` "msg"="test" "akey"="<&>"
+			expectedOutput: `"msg"="test" "akey"="<&>"
 `,
 			expectedKlogOutput: `"test" akey="<&>"
 `,
@@ -143,7 +147,7 @@ func testOutput(t *testing.T, format string) {
 			text:          "test",
 			keysAndValues: []interface{}{"akey", "avalue", "akey2"},
 			// klogr format sorts all key/value pairs.
-			expectedOutput: ` "msg"="test" "akey"="avalue" "akey2"="(MISSING)" "basekey1"="basevar1" "basekey2"="(MISSING)"
+			expectedOutput: `"msg"="test" "akey"="avalue" "akey2"="(MISSING)" "basekey1"="basevar1" "basekey2"="(MISSING)"
 `,
 			expectedKlogOutput: `"test" basekey1="basevar1" basekey2="(MISSING)" akey="avalue" akey2="(MISSING)"
 `,
@@ -152,7 +156,7 @@ func testOutput(t *testing.T, format string) {
 			klogr:         createLogger().V(0),
 			text:          "test",
 			keysAndValues: []interface{}{"err", errors.New("whoops")},
-			expectedOutput: ` "msg"="test" "err"="whoops"
+			expectedOutput: `"msg"="test" "err"="whoops"
 `,
 			expectedKlogOutput: `"test" err="whoops"
 `,
@@ -161,7 +165,7 @@ func testOutput(t *testing.T, format string) {
 			klogr:         createLogger().V(0),
 			text:          "test",
 			keysAndValues: []interface{}{"err", &customErrorJSON{"whoops"}},
-			expectedOutput: ` "msg"="test" "err"="WHOOPS"
+			expectedOutput: `"msg"="test" "err"="WHOOPS"
 `,
 			expectedKlogOutput: `"test" err="whoops"
 `,
@@ -170,7 +174,7 @@ func testOutput(t *testing.T, format string) {
 			klogr: createLogger().V(0),
 			text:  "test",
 			err:   errors.New("whoops"),
-			expectedOutput: ` "msg"="test" "error"="whoops" 
+			expectedOutput: `"msg"="test" "error"="whoops" 
 `,
 			expectedKlogOutput: `"test" err="whoops"
 `,

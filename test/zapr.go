@@ -36,7 +36,7 @@ func ZaprOutputMappingDirect() map[string]string {
 `: `{"caller":"test/output.go:<LINE>","msg":"test","v":0,"akey":"avalue","akey":"avalue2"}
 `,
 
-		`I output.go:<LINE>] "hello/world: test" akey="avalue"
+		`I output.go:<LINE>] "test" logger="hello.world" akey="avalue"
 `: `{"logger":"hello.world","caller":"test/output.go:<LINE>","msg":"test","v":0,"akey":"avalue"}
 `,
 
@@ -92,7 +92,7 @@ func ZaprOutputMappingDirect() map[string]string {
 `: `{"caller":"test/output.go:<LINE>","msg":"test","v":0,"akey":"avalue"}
 `,
 
-		`I output.go:<LINE>] "me: test" akey="avalue"
+		`I output.go:<LINE>] "test" logger="me" akey="avalue"
 `: `{"logger":"me","caller":"test/output.go:<LINE>","msg":"test","v":0,"akey":"avalue"}
 `,
 
@@ -281,12 +281,12 @@ func ZaprOutputMappingIndirect() map[string]string {
 	mapping := ZaprOutputMappingDirect()
 
 	for key, value := range map[string]string{
-		`I output.go:<LINE>] "hello/world: test" akey="avalue"
-`: `{"caller":"test/output.go:<LINE>","msg":"hello/world: test","v":0,"akey":"avalue"}
+		`I output.go:<LINE>] "test" logger="hello.world" akey="avalue"
+`: `{"caller":"test/output.go:<LINE>","msg":"test","v":0,"logger":"hello.world","akey":"avalue"}
 `,
 
-		`I output.go:<LINE>] "me: test" akey="avalue"
-`: `{"caller":"test/output.go:<LINE>","msg":"me: test","v":0,"akey":"avalue"}
+		`I output.go:<LINE>] "test" logger="me" akey="avalue"
+`: `{"caller":"test/output.go:<LINE>","msg":"test","v":0,"logger":"me","akey":"avalue"}
 `,
 
 		`I output.go:<LINE>] "odd parameters" basekey1="basevar1" basekey2="(MISSING)" akey="avalue" akey2="(MISSING)"
