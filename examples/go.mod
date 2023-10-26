@@ -1,4 +1,4 @@
-module example
+module k8s.io/klog/examples
 
 go 1.13
 

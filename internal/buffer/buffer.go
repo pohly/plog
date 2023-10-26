@@ -36,8 +36,7 @@ var (
 // use. It also provides some helper methods for output formatting.
 type Buffer struct {
 	bytes.Buffer
-	Tmp  [64]byte // temporary byte array for creating headers.
-	next *Buffer
+	Tmp [64]byte // temporary byte array for creating headers.
 }
 
 var buffers = sync.Pool{

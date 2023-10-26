@@ -40,6 +40,7 @@ import (
 	testingclock "k8s.io/klog/v2/internal/clock/testing"
 	"k8s.io/klog/v2/internal/severity"
 	"k8s.io/klog/v2/internal/test"
+	"k8s.io/klog/v2/internal/test/require"
 )
 
 // TODO: This test package should be refactored so that tests cannot
@@ -76,9 +77,7 @@ func (l *loggingT) swap(writers [severity.NumSeverity]flushSyncWriter) (old [sev
 	l.mu.Lock()
 	defer l.mu.Unlock()
 	old = l.file
-	for i, w := range writers {
-		logging.file[i] = w
-	}
+	logging.file = writers
 	return
 }
 
@@ -93,7 +92,7 @@ func contents(s severity.Severity) string {
 }
 
 // contains reports whether the string is contained in the log.
-func contains(s severity.Severity, str string, t *testing.T) bool {
+func contains(s severity.Severity, str string) bool {
 	return strings.Contains(contents(s), str)
 }
 
@@ -109,10 +108,10 @@ func TestInfo(t *testing.T) {
 	setFlags()
 	defer logging.swap(logging.newBuffers())
 	Info("test")
-	if !contains(severity.InfoLog, "I", t) {
+	if !contains(severity.InfoLog, "I") {
 		t.Errorf("Info has wrong character: %q", contents(severity.InfoLog))
 	}
-	if !contains(severity.InfoLog, "test", t) {
+	if !contains(severity.InfoLog, "test") {
 		t.Error("Info failed")
 	}
 }
@@ -182,10 +181,10 @@ func TestStandardLog(t *testing.T) {
 	setFlags()
 	defer logging.swap(logging.newBuffers())
 	stdLog.Print("test")
-	if !contains(severity.InfoLog, "I", t) {
+	if !contains(severity.InfoLog, "I") {
 		t.Errorf("Info has wrong character: %q", contents(severity.InfoLog))
 	}
-	if !contains(severity.InfoLog, "test", t) {
+	if !contains(severity.InfoLog, "test") {
 		t.Error("Info failed")
 	}
 }
@@ -240,17 +239,17 @@ func TestError(t *testing.T) {
 	setFlags()
 	defer logging.swap(logging.newBuffers())
 	Error("test")
-	if !contains(severity.ErrorLog, "E", t) {
+	if !contains(severity.ErrorLog, "E") {
 		t.Errorf("Error has wrong character: %q", contents(severity.ErrorLog))
 	}
-	if !contains(severity.ErrorLog, "test", t) {
+	if !contains(severity.ErrorLog, "test") {
 		t.Error("Error failed")
 	}
 	str := contents(severity.ErrorLog)
-	if !contains(severity.WarningLog, str, t) {
+	if !contains(severity.WarningLog, str) {
 		t.Error("Warning failed")
 	}
-	if !contains(severity.InfoLog, str, t) {
+	if !contains(severity.InfoLog, str) {
 		t.Error("Info failed")
 	}
 }
@@ -264,17 +263,17 @@ func TestErrorWithOneOutput(t *testing.T) {
 	logging.oneOutput = true
 	defer logging.swap(logging.newBuffers())
 	Error("test")
-	if !contains(severity.ErrorLog, "E", t) {
+	if !contains(severity.ErrorLog, "E") {
 		t.Errorf("Error has wrong character: %q", contents(severity.ErrorLog))
 	}
-	if !contains(severity.ErrorLog, "test", t) {
+	if !contains(severity.ErrorLog, "test") {
 		t.Error("Error failed")
 	}
 	str := contents(severity.ErrorLog)
-	if contains(severity.WarningLog, str, t) {
+	if contains(severity.WarningLog, str) {
 		t.Error("Warning failed")
 	}
-	if contains(severity.InfoLog, str, t) {
+	if contains(severity.InfoLog, str) {
 		t.Error("Info failed")
 	}
 }
@@ -287,14 +286,14 @@ func TestWarning(t *testing.T) {
 	setFlags()
 	defer logging.swap(logging.newBuffers())
 	Warning("test")
-	if !contains(severity.WarningLog, "W", t) {
+	if !contains(severity.WarningLog, "W") {
 		t.Errorf("Warning has wrong character: %q", contents(severity.WarningLog))
 	}
-	if !contains(severity.WarningLog, "test", t) {
+	if !contains(severity.WarningLog, "test") {
 		t.Error("Warning failed")
 	}
 	str := contents(severity.WarningLog)
-	if !contains(severity.InfoLog, str, t) {
+	if !contains(severity.InfoLog, str) {
 		t.Error("Info failed")
 	}
 }
@@ -308,14 +307,14 @@ func TestWarningWithOneOutput(t *testing.T) {
 	logging.oneOutput = true
 	defer logging.swap(logging.newBuffers())
 	Warning("test")
-	if !contains(severity.WarningLog, "W", t) {
+	if !contains(severity.WarningLog, "W") {
 		t.Errorf("Warning has wrong character: %q", contents(severity.WarningLog))
 	}
-	if !contains(severity.WarningLog, "test", t) {
+	if !contains(severity.WarningLog, "test") {
 		t.Error("Warning failed")
 	}
 	str := contents(severity.WarningLog)
-	if contains(severity.InfoLog, str, t) {
+	if contains(severity.InfoLog, str) {
 		t.Error("Info failed")
 	}
 }
@@ -325,12 +324,12 @@ func TestV(t *testing.T) {
 	defer CaptureState().Restore()
 	setFlags()
 	defer logging.swap(logging.newBuffers())
-	logging.verbosity.Set("2")
+	require.NoError(t, logging.verbosity.Set("2"))
 	V(2).Info("test")
-	if !contains(severity.InfoLog, "I", t) {
+	if !contains(severity.InfoLog, "I") {
 		t.Errorf("Info has wrong character: %q", contents(severity.InfoLog))
 	}
-	if !contains(severity.InfoLog, "test", t) {
+	if !contains(severity.InfoLog, "test") {
 		t.Error("Info failed")
 	}
 }
@@ -340,7 +339,7 @@ func TestVmoduleOn(t *testing.T) {
 	defer CaptureState().Restore()
 	setFlags()
 	defer logging.swap(logging.newBuffers())
-	logging.vmodule.Set("klog_test=2")
+	require.NoError(t, logging.vmodule.Set("klog_test=2"))
 	if !V(1).Enabled() {
 		t.Error("V not enabled for 1")
 	}
@@ -351,10 +350,10 @@ func TestVmoduleOn(t *testing.T) {
 		t.Error("V enabled for 3")
 	}
 	V(2).Info("test")
-	if !contains(severity.InfoLog, "I", t) {
+	if !contains(severity.InfoLog, "I") {
 		t.Errorf("Info has wrong character: %q", contents(severity.InfoLog))
 	}
-	if !contains(severity.InfoLog, "test", t) {
+	if !contains(severity.InfoLog, "test") {
 		t.Error("Info failed")
 	}
 }
@@ -364,7 +363,7 @@ func TestVmoduleOff(t *testing.T) {
 	defer CaptureState().Restore()
 	setFlags()
 	defer logging.swap(logging.newBuffers())
-	logging.vmodule.Set("notthisfile=2")
+	require.NoError(t, logging.vmodule.Set("notthisfile=2"))
 	for i := 1; i <= 3; i++ {
 		if V(Level(i)).Enabled() {
 			t.Errorf("V enabled for %d", i)
@@ -376,7 +375,7 @@ func TestVmoduleOff(t *testing.T) {
 	}
 }
 
-func TestSetOutputDataRace(t *testing.T) {
+func TestSetOutputDataRace(*testing.T) {
 	defer CaptureState().Restore()
 	setFlags()
 	defer logging.swap(logging.newBuffers())
@@ -456,7 +455,7 @@ func testVmoduleGlob(pat string, match bool, t *testing.T) {
 	defer CaptureState().Restore()
 	setFlags()
 	defer logging.swap(logging.newBuffers())
-	logging.vmodule.Set(pat)
+	require.NoError(t, logging.vmodule.Set(pat))
 	if V(2).Enabled() != match {
 		t.Errorf("incorrect match for %q: got %#v expected %#v", pat, V(2), match)
 	}
@@ -804,7 +803,7 @@ func BenchmarkLogs(b *testing.B) {
 	}
 	defer os.Remove(testFile.Name())
 
-	logging.verbosity.Set("0")
+	require.NoError(b, logging.verbosity.Set("0"))
 	logging.toStderr = false
 	logging.alsoToStderr = false
 	logging.stderrThreshold = severityValue{
@@ -875,14 +874,14 @@ func TestInitFlags(t *testing.T) {
 
 	fs1 := flag.NewFlagSet("test1", flag.PanicOnError)
 	InitFlags(fs1)
-	fs1.Set("log_dir", "/test1")
-	fs1.Set("log_file_max_size", "1")
+	require.NoError(t, fs1.Set("log_dir", "/test1"))
+	require.NoError(t, fs1.Set("log_file_max_size", "1"))
 	fs2 := flag.NewFlagSet("test2", flag.PanicOnError)
 	InitFlags(fs2)
 	if logging.logDir != "/test1" {
 		t.Fatalf("Expected log_dir to be %q, got %q", "/test1", logging.logDir)
 	}
-	fs2.Set("log_file_max_size", "2048")
+	require.NoError(t, fs2.Set("log_file_max_size", "2048"))
 	if logging.logFileMaxSizeMB != 2048 {
 		t.Fatal("Expected log_file_max_size to be 2048")
 	}
@@ -966,7 +965,7 @@ func TestInfoObjectRef(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			Info(tt.ref)
-			if !contains(severity.InfoLog, tt.want, t) {
+			if !contains(severity.InfoLog, tt.want) {
 				t.Errorf("expected %v, got %v", tt.want, contents(severity.InfoLog))
 			}
 		})
@@ -1170,7 +1169,7 @@ second value line`},
 		},
 	}
 
-	logging.verbosity.Set("2")
+	require.NoError(t, logging.verbosity.Set("2"))
 
 	for l := Level(0); l < Level(4); l++ {
 		for _, data := range testDataInfo {
@@ -1466,7 +1465,7 @@ func TestLogFilter(t *testing.T) {
 		for _, tc := range testcases {
 			logging.newBuffers()
 			f.logFunc(tc.args...)
-			got := contains(f.severity, "[FILTERED]", t)
+			got := contains(f.severity, "[FILTERED]")
 			if got != tc.expectFiltered {
 				t.Errorf("%s filter application failed, got %v, want %v", f.name, got, tc.expectFiltered)
 			}
@@ -1805,7 +1804,7 @@ func (l *testLogr) reset() {
 	l.entries = []testLogrEntry{}
 }
 
-func (l *testLogr) Info(level int, msg string, keysAndValues ...interface{}) {
+func (l *testLogr) Info(_ int, msg string, keysAndValues ...interface{}) {
 	l.mutex.Lock()
 	defer l.mutex.Unlock()
 	l.entries = append(l.entries, testLogrEntry{
@@ -1826,12 +1825,12 @@ func (l *testLogr) Error(err error, msg string, keysAndValues ...interface{}) {
 	})
 }
 
-func (l *testLogr) Init(info logr.RuntimeInfo)             {}
-func (l *testLogr) Enabled(level int) bool                 { return true }
+func (l *testLogr) Init(logr.RuntimeInfo)                  {}
+func (l *testLogr) Enabled(int) bool                       { return true }
 func (l *testLogr) V(int) logr.Logger                      { panic("not implemented") }
 func (l *testLogr) WithName(string) logr.LogSink           { panic("not implemented") }
 func (l *testLogr) WithValues(...interface{}) logr.LogSink { panic("not implemented") }
-func (l *testLogr) WithCallDepth(depth int) logr.LogSink   { return l }
+func (l *testLogr) WithCallDepth(int) logr.LogSink         { return l }
 
 var _ logr.LogSink = &testLogr{}
 var _ logr.CallDepthLogSink = &testLogr{}
@@ -1857,7 +1856,7 @@ func (l *callDepthTestLogr) WithCallDepth(depth int) logr.LogSink {
 	return l
 }
 
-func (l *callDepthTestLogr) Info(level int, msg string, keysAndValues ...interface{}) {
+func (l *callDepthTestLogr) Info(_ int, msg string, keysAndValues ...interface{}) {
 	l.mutex.Lock()
 	defer l.mutex.Unlock()
 	// Add 2 to depth for the wrapper function caller and for invocation in
@@ -2202,12 +2201,12 @@ func TestSettingsDeepCopy(t *testing.T) {
 			},
 		},
 	}
-	copy := settings.deepCopy()
-	if !reflect.DeepEqual(settings, copy) {
-		t.Fatalf("Copy not identical to original settings. Original:\n    %+v\nCopy:    %+v", settings, copy)
+	clone := settings.deepCopy()
+	if !reflect.DeepEqual(settings, clone) {
+		t.Fatalf("Copy not identical to original settings. Original:\n    %+v\nCopy:    %+v", settings, clone)
 	}
 	settings.vmodule.filter[1].pattern = "x"
-	if copy.vmodule.filter[1].pattern == settings.vmodule.filter[1].pattern {
+	if clone.vmodule.filter[1].pattern == settings.vmodule.filter[1].pattern {
 		t.Fatal("Copy should not have shared vmodule.filter.")
 	}
 }

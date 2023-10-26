@@ -43,7 +43,7 @@ func TestFormat(t *testing.T) {
 `, klog.Format(obj).(fmt.Stringer).String(), "Format(config).String()")
 	// fmt.Sprintf would call String if it was available.
 	str := fmt.Sprintf("%s", klog.Format(obj).(logr.Marshaler).MarshalLog())
-	if strings.Index(str, "kind is config") >= 0 {
+	if strings.Contains(str, "kind is config") {
 		t.Errorf("fmt.Sprintf called TypeMeta.String for klog.Format(obj).MarshalLog():\n%s", str)
 	}
 

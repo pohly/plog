@@ -25,8 +25,9 @@ func main() {
 	flag.Parse()
 
 	someData := MyStruct{
-		Name: "hello",
-		Data: "world",
+		Name:     "hello",
+		Data:     "world",
+		internal: 42,
 	}
 
 	longData := MyStruct{

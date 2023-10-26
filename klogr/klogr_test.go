@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"k8s.io/klog/v2"
+	"k8s.io/klog/v2/internal/test/require"
 	"k8s.io/klog/v2/test"
 
 	"github.com/go-logr/logr"
@@ -19,7 +20,7 @@ const (
 )
 
 func testOutput(t *testing.T, format string) {
-	new := func() logr.Logger {
+	createLogger := func() logr.Logger {
 		switch format {
 		case formatNew:
 			return New()
@@ -38,7 +39,7 @@ func testOutput(t *testing.T, format string) {
 		expectedKlogOutput string
 	}{
 		"should log with values passed to keysAndValues": {
-			klogr:         new().V(0),
+			klogr:         createLogger().V(0),
 			text:          "test",
 			keysAndValues: []interface{}{"akey", "avalue"},
 			expectedOutput: ` "msg"="test" "akey"="avalue"
@@ -47,7 +48,7 @@ func testOutput(t *testing.T, format string) {
 `,
 		},
 		"should log with name and values passed to keysAndValues": {
-			klogr:         new().V(0).WithName("me"),
+			klogr:         createLogger().V(0).WithName("me"),
 			text:          "test",
 			keysAndValues: []interface{}{"akey", "avalue"},
 			expectedOutput: `me "msg"="test" "akey"="avalue"
@@ -56,7 +57,7 @@ func testOutput(t *testing.T, format string) {
 `,
 		},
 		"should log with multiple names and values passed to keysAndValues": {
-			klogr:         new().V(0).WithName("hello").WithName("world"),
+			klogr:         createLogger().V(0).WithName("hello").WithName("world"),
 			text:          "test",
 			keysAndValues: []interface{}{"akey", "avalue"},
 			expectedOutput: `hello/world "msg"="test" "akey"="avalue"
@@ -65,7 +66,7 @@ func testOutput(t *testing.T, format string) {
 `,
 		},
 		"may print duplicate keys with the same value": {
-			klogr:         new().V(0),
+			klogr:         createLogger().V(0),
 			text:          "test",
 			keysAndValues: []interface{}{"akey", "avalue", "akey", "avalue"},
 			expectedOutput: ` "msg"="test" "akey"="avalue"
@@ -74,7 +75,7 @@ func testOutput(t *testing.T, format string) {
 `,
 		},
 		"may print duplicate keys when the values are passed to Info": {
-			klogr:         new().V(0),
+			klogr:         createLogger().V(0),
 			text:          "test",
 			keysAndValues: []interface{}{"akey", "avalue", "akey", "avalue2"},
 			expectedOutput: ` "msg"="test" "akey"="avalue2"
@@ -83,7 +84,7 @@ func testOutput(t *testing.T, format string) {
 `,
 		},
 		"should only print the duplicate key that is passed to Info if one was passed to the logger": {
-			klogr:         new().WithValues("akey", "avalue"),
+			klogr:         createLogger().WithValues("akey", "avalue"),
 			text:          "test",
 			keysAndValues: []interface{}{"akey", "avalue"},
 			expectedOutput: ` "msg"="test" "akey"="avalue"
@@ -92,7 +93,7 @@ func testOutput(t *testing.T, format string) {
 `,
 		},
 		"should sort within logger and parameter key/value pairs in the default format and dump the logger pairs first": {
-			klogr:         new().WithValues("akey9", "avalue9", "akey8", "avalue8", "akey1", "avalue1"),
+			klogr:         createLogger().WithValues("akey9", "avalue9", "akey8", "avalue8", "akey1", "avalue1"),
 			text:          "test",
 			keysAndValues: []interface{}{"akey5", "avalue5", "akey4", "avalue4"},
 			expectedOutput: ` "msg"="test" "akey1"="avalue1" "akey4"="avalue4" "akey5"="avalue5" "akey8"="avalue8" "akey9"="avalue9"
@@ -101,7 +102,7 @@ func testOutput(t *testing.T, format string) {
 `,
 		},
 		"should only print the key passed to Info when one is already set on the logger": {
-			klogr:         new().WithValues("akey", "avalue"),
+			klogr:         createLogger().WithValues("akey", "avalue"),
 			text:          "test",
 			keysAndValues: []interface{}{"akey", "avalue2"},
 			expectedOutput: ` "msg"="test" "akey"="avalue2"
@@ -110,7 +111,7 @@ func testOutput(t *testing.T, format string) {
 `,
 		},
 		"should correctly handle odd-numbers of KVs": {
-			klogr:         new(),
+			klogr:         createLogger(),
 			text:          "test",
 			keysAndValues: []interface{}{"akey", "avalue", "akey2"},
 			expectedOutput: ` "msg"="test" "akey"="avalue" "akey2"="(MISSING)"
@@ -119,7 +120,7 @@ func testOutput(t *testing.T, format string) {
 `,
 		},
 		"should correctly handle odd-numbers of KVs in WithValue": {
-			klogr:         new().WithValues("keyWithoutValue"),
+			klogr:         createLogger().WithValues("keyWithoutValue"),
 			text:          "test",
 			keysAndValues: []interface{}{"akey", "avalue", "akey2"},
 			// klogr format sorts all key/value pairs.
@@ -129,7 +130,7 @@ func testOutput(t *testing.T, format string) {
 `,
 		},
 		"should correctly html characters": {
-			klogr:         new(),
+			klogr:         createLogger(),
 			text:          "test",
 			keysAndValues: []interface{}{"akey", "<&>"},
 			expectedOutput: ` "msg"="test" "akey"="<&>"
@@ -138,7 +139,7 @@ func testOutput(t *testing.T, format string) {
 `,
 		},
 		"should correctly handle odd-numbers of KVs in both log values and Info args": {
-			klogr:         new().WithValues("basekey1", "basevar1", "basekey2"),
+			klogr:         createLogger().WithValues("basekey1", "basevar1", "basekey2"),
 			text:          "test",
 			keysAndValues: []interface{}{"akey", "avalue", "akey2"},
 			// klogr format sorts all key/value pairs.
@@ -148,7 +149,7 @@ func testOutput(t *testing.T, format string) {
 `,
 		},
 		"should correctly print regular error types": {
-			klogr:         new().V(0),
+			klogr:         createLogger().V(0),
 			text:          "test",
 			keysAndValues: []interface{}{"err", errors.New("whoops")},
 			expectedOutput: ` "msg"="test" "err"="whoops"
@@ -157,7 +158,7 @@ func testOutput(t *testing.T, format string) {
 `,
 		},
 		"should use MarshalJSON in the default format if an error type implements it": {
-			klogr:         new().V(0),
+			klogr:         createLogger().V(0),
 			text:          "test",
 			keysAndValues: []interface{}{"err", &customErrorJSON{"whoops"}},
 			expectedOutput: ` "msg"="test" "err"="WHOOPS"
@@ -166,7 +167,7 @@ func testOutput(t *testing.T, format string) {
 `,
 		},
 		"should correctly print regular error types when using logr.Error": {
-			klogr: new().V(0),
+			klogr: createLogger().V(0),
 			text:  "test",
 			err:   errors.New("whoops"),
 			expectedOutput: ` "msg"="test" "error"="whoops" 
@@ -205,7 +206,7 @@ func testOutput(t *testing.T, format string) {
 
 func TestOutput(t *testing.T) {
 	fs := test.InitKlog(t)
-	fs.Set("skip_headers", "true")
+	require.NoError(t, fs.Set("skip_headers", "true"))
 
 	formats := []string{
 		formatNew,

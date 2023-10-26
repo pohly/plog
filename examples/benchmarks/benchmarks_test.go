@@ -27,6 +27,7 @@ import (
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 
+	"k8s.io/klog/examples/util/require"
 	"k8s.io/klog/v2"
 )
 
@@ -38,11 +39,11 @@ func init() {
 	// klog gets configured so that it writes to a single output file that
 	// will be set during tests with SetOutput.
 	klog.InitFlags(nil)
-	flag.Set("v", fmt.Sprintf("%d", verbosityThreshold))
-	flag.Set("log_file", "/dev/null")
-	flag.Set("logtostderr", "false")
-	flag.Set("alsologtostderr", "false")
-	flag.Set("stderrthreshold", "10")
+	require.NoError(flag.Set("v", fmt.Sprintf("%d", verbosityThreshold)))
+	require.NoError(flag.Set("log_file", "/dev/null"))
+	require.NoError(flag.Set("logtostderr", "false"))
+	require.NoError(flag.Set("alsologtostderr", "false"))
+	require.NoError(flag.Set("stderrthreshold", "10"))
 }
 
 type testcase struct {

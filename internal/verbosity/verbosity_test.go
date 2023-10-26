@@ -19,11 +19,13 @@ package verbosity
 
 import (
 	"testing"
+
+	"k8s.io/klog/v2/internal/test/require"
 )
 
 func TestV(t *testing.T) {
 	vs := New()
-	vs.verbosity.Set("2")
+	require.NoError(t, vs.verbosity.Set("2"))
 	depth := 0
 	if !vs.Enabled(1, depth) {
 		t.Error("not enabled for 1")
@@ -38,7 +40,7 @@ func TestV(t *testing.T) {
 
 func TestVmoduleOn(t *testing.T) {
 	vs := New()
-	vs.vmodule.Set("verbosity_test=2")
+	require.NoError(t, vs.vmodule.Set("verbosity_test=2"))
 	depth := 0
 	if !vs.Enabled(1, depth) {
 		t.Error("not enabled for 1")
@@ -81,7 +83,7 @@ var vGlobs = map[string]bool{
 // Test that vmodule globbing works as advertised.
 func testVmoduleGlob(pat string, match bool, t *testing.T) {
 	vs := New()
-	vs.vmodule.Set(pat)
+	require.NoError(t, vs.vmodule.Set(pat))
 	depth := 0
 	actual := vs.Enabled(2, depth)
 	if actual != match {

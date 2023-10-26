@@ -107,7 +107,8 @@ func NewConfig(opts ...ConfigOption) *Config {
 		opt(&c.co)
 	}
 
-	c.Verbosity().Set(strconv.FormatInt(int64(c.co.verbosityDefault), 10))
+	// Cannot fail for this input.
+	_ = c.Verbosity().Set(strconv.FormatInt(int64(c.co.verbosityDefault), 10))
 	return c
 }
 

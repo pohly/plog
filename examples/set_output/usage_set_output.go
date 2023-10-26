@@ -4,13 +4,15 @@ import (
 	"bytes"
 	"flag"
 	"fmt"
+
+	"k8s.io/klog/examples/util/require"
 	"k8s.io/klog/v2"
 )
 
 func main() {
 	klog.InitFlags(nil)
-	flag.Set("logtostderr", "false")
-	flag.Set("alsologtostderr", "false")
+	require.NoError(flag.Set("logtostderr", "false"))
+	require.NoError(flag.Set("alsologtostderr", "false"))
 	flag.Parse()
 
 	buf := new(bytes.Buffer)

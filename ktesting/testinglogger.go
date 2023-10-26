@@ -62,8 +62,8 @@ type TL interface {
 // output in memory is relevant.
 type NopTL struct{}
 
-func (n NopTL) Helper()                 {}
-func (n NopTL) Log(args ...interface{}) {}
+func (n NopTL) Helper()            {}
+func (n NopTL) Log(...interface{}) {}
 
 var _ TL = NopTL{}
 
