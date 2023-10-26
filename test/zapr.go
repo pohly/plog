@@ -18,11 +18,6 @@ package test
 
 // ZaprOutputMappingDirect provides a mapping from klog output to the
 // corresponding zapr output when zapr is called directly.
-//
-// # Experimental
-//
-// Notice: This package is EXPERIMENTAL and may be changed or removed in a
-// later release.
 func ZaprOutputMappingDirect() map[string]string {
 	return map[string]string{
 		`I output.go:<LINE>] "test" akey="<&>"
@@ -282,11 +277,6 @@ I output.go:<LINE>] "odd WithValues" keyWithoutValue="(MISSING)"
 //   - zap drops keys with missing values, here we get "(MISSING)".
 //   - zap does not de-duplicate key/value pairs, here klog does that
 //     for it.
-//
-// # Experimental
-//
-// Notice: This package is EXPERIMENTAL and may be changed or removed in a
-// later release.
 func ZaprOutputMappingIndirect() map[string]string {
 	mapping := ZaprOutputMappingDirect()
 
