@@ -21,6 +21,7 @@ import (
 	"io"
 	"os"
 	"strconv"
+	"time"
 
 	"k8s.io/klog/v2/internal/verbosity"
 )
@@ -56,6 +57,7 @@ type configOptions struct {
 	verbosityFlagName string
 	vmoduleFlagName   string
 	verbosityDefault  int
+	fixedTime         *time.Time
 	output            io.Writer
 }
 
@@ -88,6 +90,18 @@ func Verbosity(level int) ConfigOption {
 func Output(output io.Writer) ConfigOption {
 	return func(co *configOptions) {
 		co.output = output
+	}
+}
+
+// FixedTime overrides the actual time with a fixed time. Useful only for testing.
+//
+// # Experimental
+//
+// Notice: This function is EXPERIMENTAL and may be changed or removed in a
+// later release.
+func FixedTime(ts time.Time) ConfigOption {
+	return func(co *configOptions) {
+		co.fixedTime = &ts
 	}
 }
 

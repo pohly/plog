@@ -655,16 +655,15 @@ func (l *loggingT) header(s severity.Severity, depth int) (*buffer.Buffer, strin
 			}
 		}
 	}
-	return l.formatHeader(s, file, line), file, line
+	return l.formatHeader(s, file, line, timeNow()), file, line
 }
 
 // formatHeader formats a log header using the provided file name and line number.
-func (l *loggingT) formatHeader(s severity.Severity, file string, line int) *buffer.Buffer {
+func (l *loggingT) formatHeader(s severity.Severity, file string, line int, now time.Time) *buffer.Buffer {
 	buf := buffer.GetBuffer()
 	if l.skipHeaders {
 		return buf
 	}
-	now := timeNow()
 	buf.FormatHeader(s, file, line, now)
 	return buf
 }
@@ -703,6 +702,10 @@ func (l *loggingT) printDepth(s severity.Severity, logger *logWriter, filter Log
 	}
 
 	buf, file, line := l.header(s, depth)
+	l.printWithInfos(buf, file, line, s, logger, filter, depth+1, args...)
+}
+
+func (l *loggingT) printWithInfos(buf *buffer.Buffer, file string, line int, s severity.Severity, logger *logWriter, filter LogFilter, depth int, args ...interface{}) {
 	// If a logger is set and doesn't support writing a formatted buffer,
 	// we clear the generated header as we rely on the backing
 	// logger implementation to print headers.
@@ -751,7 +754,7 @@ func (l *loggingT) printfDepth(s severity.Severity, logger *logWriter, filter Lo
 // alsoLogToStderr is true, the log message always appears on standard error; it
 // will also appear in the log file unless --logtostderr is set.
 func (l *loggingT) printWithFileLine(s severity.Severity, logger *logWriter, filter LogFilter, file string, line int, alsoToStderr bool, args ...interface{}) {
-	buf := l.formatHeader(s, file, line)
+	buf := l.formatHeader(s, file, line, timeNow())
 	// If a logger is set and doesn't support writing a formatted buffer,
 	// we clear the generated header as we rely on the backing
 	// logger implementation to print headers.
@@ -806,7 +809,7 @@ func (l *loggingT) printS(err error, s severity.Severity, depth int, msg string,
 		serialize.KVListFormat(&b.Buffer, "err", err)
 	}
 	serialize.KVListFormat(&b.Buffer, keysAndValues...)
-	l.printDepth(s, logging.logger, nil, depth+1, &b.Buffer)
+	l.printDepth(s, nil, nil, depth+1, &b.Buffer)
 	// Make the buffer available for reuse.
 	buffer.PutBuffer(b)
 }
