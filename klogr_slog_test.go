@@ -27,7 +27,8 @@ import (
 	"os"
 	"time"
 
-	"github.com/go-logr/logr/slogr"
+	"github.com/go-logr/logr"
+
 	"k8s.io/klog/v2"
 	internal "k8s.io/klog/v2/internal/buffer"
 )
@@ -71,7 +72,7 @@ func ExampleBackground_Slog() {
 	internal.Pid = 123
 
 	logrLogger := klog.Background()
-	slogHandler := slogr.NewSlogHandler(logrLogger)
+	slogHandler := logr.ToSlogHandler(logrLogger)
 	slogLogger := slog.New(slogHandler)
 
 	// Note that -vmodule does not work when using the slog API because
@@ -107,10 +108,10 @@ func ExampleBackground_Slog() {
 	)
 
 	// Output:
-	// I1224 12:30:40.000000     123 klogr_slog_test.go:80] "A debug message"
-	// I1224 12:30:40.000000     123 klogr_slog_test.go:82] "An info message"
-	// W1224 12:30:40.000000     123 klogr_slog_test.go:83] "A warning"
-	// E1224 12:30:40.000000     123 klogr_slog_test.go:84] "An error" err="fake error"
-	// I1224 12:30:40.000000     123 klogr_slog_test.go:87] "Grouping" top.sub={"str":"abc","bool":true,"bottom":{"coordinates":{"X":-1,"Y":-2}}} top.duration="1s" top.pi=3.12 top.e=2.71 top.moreCoordinates={"X":100,"Y":200}
-	// I1224 12:30:40.000000     123 klogr_slog_test.go:103] "slog values" variables={"a":1,"b":2} duration="1s" coordinates={"X":100,"Y":200}
+	// I1224 12:30:40.000000     123 klogr_slog_test.go:81] "A debug message"
+	// I1224 12:30:40.000000     123 klogr_slog_test.go:83] "An info message"
+	// W1224 12:30:40.000000     123 klogr_slog_test.go:84] "A warning"
+	// E1224 12:30:40.000000     123 klogr_slog_test.go:85] "An error" err="fake error"
+	// I1224 12:30:40.000000     123 klogr_slog_test.go:88] "Grouping" top.sub={"str":"abc","bool":true,"bottom":{"coordinates":{"X":-1,"Y":-2}}} top.duration="1s" top.pi=3.12 top.e=2.71 top.moreCoordinates={"X":100,"Y":200}
+	// I1224 12:30:40.000000     123 klogr_slog_test.go:104] "slog values" variables={"a":1,"b":2} duration="1s" coordinates={"X":100,"Y":200}
 }
