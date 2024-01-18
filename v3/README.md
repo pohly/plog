@@ -1,5 +1,5 @@
-klog
-====
+plog v3
+=======
 
 klog is a permanent fork of https://github.com/golang/glog.
 
