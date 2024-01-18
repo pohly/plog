@@ -5,7 +5,7 @@ import (
 
 	"github.com/golang/glog"
 	"k8s.io/klog/examples/util/require"
-	"k8s.io/klog/v2"
+	"github.com/pohly/plog/v2"
 )
 
 func main() {
@@ -13,7 +13,7 @@ func main() {
 	flag.Parse()
 
 	klogFlags := flag.NewFlagSet("klog", flag.ExitOnError)
-	klog.InitFlags(klogFlags)
+	plog.InitFlags(klogFlags)
 
 	// Sync the glog and klog flags.
 	flag.CommandLine.VisitAll(func(f1 *flag.Flag) {
@@ -25,7 +25,7 @@ func main() {
 	})
 
 	glog.Info("hello from glog!")
-	klog.Info("nice to meet you, I'm klog")
+	plog.Info("nice to meet you, I'm klog")
 	glog.Flush()
-	klog.Flush()
+	plog.Flush()
 }

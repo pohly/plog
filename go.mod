@@ -1,4 +1,4 @@
-module k8s.io/klog/v2
+module github.com/pohly/plog/v2
 
 go 1.18
 

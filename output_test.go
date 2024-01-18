@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package klog_test
+package plog_test
 
 import (
 	"io"
@@ -22,8 +22,8 @@ import (
 
 	"github.com/go-logr/logr"
 
-	"k8s.io/klog/v2"
-	"k8s.io/klog/v2/test"
+	"github.com/pohly/plog/v2"
+	"github.com/pohly/plog/v2/test"
 )
 
 // klogConfig tests klog output without a logger.
@@ -42,7 +42,7 @@ func BenchmarkKlogOutput(b *testing.B) {
 // klogKlogrConfig tests klogr output via klog, using the klog/v2 klogr.
 var klogKLogrConfig = test.OutputConfig{
 	NewLogger: func(out io.Writer, v int, vmodule string) logr.Logger {
-		return klog.NewKlogr()
+		return plog.NewKlogr()
 	},
 }
 

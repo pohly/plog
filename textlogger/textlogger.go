@@ -16,8 +16,8 @@ limitations under the License.
 */
 
 // Package textlogger contains an implementation of the logr interface which is
-// producing the exact same output as klog. It does not route output through
-// klog (i.e. ignores [k8s.io/klog/v2.InitFlags]). Instead, all settings must be
+// producing the exact same output as plog. It does not route output through
+// klog (i.e. ignores [github.com/pohly/plog/v2.InitFlags]). Instead, all settings must be
 // configured through its own [NewConfig] and [Config.AddFlags].
 package textlogger
 
@@ -29,10 +29,10 @@ import (
 
 	"github.com/go-logr/logr"
 
-	"k8s.io/klog/v2/internal/buffer"
-	"k8s.io/klog/v2/internal/serialize"
-	"k8s.io/klog/v2/internal/severity"
-	"k8s.io/klog/v2/internal/verbosity"
+	"github.com/pohly/plog/v2/internal/buffer"
+	"github.com/pohly/plog/v2/internal/serialize"
+	"github.com/pohly/plog/v2/internal/severity"
+	"github.com/pohly/plog/v2/internal/verbosity"
 )
 
 var (
@@ -177,8 +177,8 @@ func (l *tlogger) WithValues(kvList ...interface{}) logr.LogSink {
 type KlogBufferWriter interface {
 	// WriteKlogBuffer takes a pre-formatted buffer prepared by klog and
 	// writes it unchanged to the output stream. Can be used with
-	// klog.WriteKlogBuffer when setting a logger through
-	// klog.SetLoggerWithOptions.
+	// plog.WriteKlogBuffer when setting a logger through
+	// plog.SetLoggerWithOptions.
 	WriteKlogBuffer([]byte)
 }
 

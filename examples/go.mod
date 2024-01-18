@@ -9,7 +9,7 @@ require (
 	go.uber.org/goleak v1.1.12
 	go.uber.org/zap v1.19.0
 	golang.org/x/tools v0.1.5
-	k8s.io/klog/v2 v2.30.0
+	github.com/pohly/plog/v2 v2.30.0
 )
 
-replace k8s.io/klog/v2 => ../
+replace github.com/pohly/plog/v2 => ../

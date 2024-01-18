@@ -27,7 +27,7 @@ Historical context is available here:
 
 Semantic versioning is used in this repository. It contains several Go modules
 with different levels of stability:
-- `k8s.io/klog/v2` - stable API, `vX.Y.Z` tags
+- `github.com/pohly/plog/v2` - stable API, `vX.Y.Z` tags
 - `examples` - no stable API, no tags, no intention to ever stabilize
 
 Exempt from the API stability guarantee are items (packages, functions, etc.)
@@ -41,10 +41,10 @@ releases of klog because an experimental API was changed.
 
 How to use klog
 ===============
-- Replace imports for `"github.com/golang/glog"` with `"k8s.io/klog/v2"`
-- Use `klog.InitFlags(nil)` explicitly for initializing global flags as we no longer use `init()` method to register the flags
+- Replace imports for `"github.com/golang/glog"` with `"github.com/pohly/plog/v2"`
+- Use `plog.InitFlags(nil)` explicitly for initializing global flags as we no longer use `init()` method to register the flags
 - You can now use `log_file` instead of `log_dir` for logging to a single file (See `examples/log_file/usage_log_file.go`)
-- If you want to redirect everything logged using klog somewhere else (say syslog!), you can use `klog.SetOutput()` method and supply a `io.Writer`. (See `examples/set_output/usage_set_output.go`)
+- If you want to redirect everything logged using klog somewhere else (say syslog!), you can use `plog.SetOutput()` method and supply a `io.Writer`. (See `examples/set_output/usage_set_output.go`)
 - For more logging conventions (See [Logging Conventions](https://github.com/kubernetes/community/blob/master/contributors/devel/sig-instrumentation/logging.md))
 - See our documentation on [pkg.go.dev/k8s.io](https://pkg.go.dev/k8s.io/klog).
 

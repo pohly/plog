@@ -17,7 +17,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package klog
+package plog
 
 import (
 	"context"
@@ -27,10 +27,10 @@ import (
 
 	"github.com/go-logr/logr"
 
-	"k8s.io/klog/v2/internal/buffer"
-	"k8s.io/klog/v2/internal/serialize"
-	"k8s.io/klog/v2/internal/severity"
-	"k8s.io/klog/v2/internal/sloghandler"
+	"github.com/pohly/plog/v2/internal/buffer"
+	"github.com/pohly/plog/v2/internal/serialize"
+	"github.com/pohly/plog/v2/internal/severity"
+	"github.com/pohly/plog/v2/internal/sloghandler"
 )
 
 func (l *klogger) Handle(ctx context.Context, record slog.Record) error {
@@ -44,7 +44,7 @@ func (l *klogger) Handle(ctx context.Context, record slog.Record) error {
 	return sloghandler.Handle(ctx, record, l.groups, slogOutput)
 }
 
-// slogOutput corresponds to several different functions in klog.go.
+// slogOutput corresponds to several different functions in plog.go.
 // It goes through some of the same checks and formatting steps before
 // it ultimately converges by calling logging.printWithInfos.
 func slogOutput(file string, line int, now time.Time, err error, s severity.Severity, msg string, kvList []interface{}) {

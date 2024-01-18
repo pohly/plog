@@ -20,8 +20,8 @@ import (
 	"flag"
 	"strconv"
 
-	"k8s.io/klog/v2/internal/serialize"
-	"k8s.io/klog/v2/internal/verbosity"
+	"github.com/pohly/plog/v2/internal/serialize"
+	"github.com/pohly/plog/v2/internal/verbosity"
 )
 
 // Config influences logging in a test logger. To make this configurable via
@@ -60,7 +60,7 @@ type configOptions struct {
 }
 
 // AnyToString overrides the default formatter for values that are not
-// supported directly by klog. The default is `fmt.Sprintf("%+v")`.
+// supported directly by plog. The default is `fmt.Sprintf("%+v")`.
 // The formatter must not panic.
 func AnyToString(anyToString func(value interface{}) string) ConfigOption {
 	return func(co *configOptions) {

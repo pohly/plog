@@ -12,22 +12,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package klog_test
+package plog_test
 
 import (
 	"flag"
 	"fmt"
 	"os"
 
-	"k8s.io/klog/v2"
+	"github.com/pohly/plog/v2"
 )
 
 func ExampleFlushAndExit() {
 	// Set up klog so that we can test it below.
 
 	var fs flag.FlagSet
-	klog.InitFlags(&fs)
-	state := klog.CaptureState()
+	plog.InitFlags(&fs)
+	state := plog.CaptureState()
 	defer state.Restore()
 	if err := fs.Set("skip_headers", "true"); err != nil {
 		panic(err)
@@ -35,17 +35,17 @@ func ExampleFlushAndExit() {
 	if err := fs.Set("logtostderr", "false"); err != nil {
 		panic(err)
 	}
-	klog.SetOutput(os.Stdout)
-	klog.OsExit = func(exitCode int) {
+	plog.SetOutput(os.Stdout)
+	plog.OsExit = func(exitCode int) {
 		fmt.Printf("os.Exit(%d)\n", exitCode)
 	}
 
 	// If we were to return or exit without flushing, this message would
 	// get lost because it is buffered in memory by klog when writing to
 	// files. Output to stderr is not buffered.
-	klog.InfoS("exiting...")
+	plog.InfoS("exiting...")
 	exitCode := 10
-	klog.FlushAndExit(klog.ExitFlushTimeout, exitCode)
+	plog.FlushAndExit(plog.ExitFlushTimeout, exitCode)
 
 	// Output:
 	// "exiting..."

@@ -33,7 +33,7 @@ limitations under the License.
 //	    log := buffer.Data()
 //
 // Serialization of the structured log parameters is done in the same way
-// as for klog.InfoS.
+// as for plog.InfoS.
 package ktesting
 
 import (
@@ -44,12 +44,12 @@ import (
 
 	"github.com/go-logr/logr"
 
-	"k8s.io/klog/v2"
-	"k8s.io/klog/v2/internal/buffer"
-	"k8s.io/klog/v2/internal/dbg"
-	"k8s.io/klog/v2/internal/serialize"
-	"k8s.io/klog/v2/internal/severity"
-	"k8s.io/klog/v2/internal/verbosity"
+	"github.com/pohly/plog/v2"
+	"github.com/pohly/plog/v2/internal/buffer"
+	"github.com/pohly/plog/v2/internal/dbg"
+	"github.com/pohly/plog/v2/internal/serialize"
+	"github.com/pohly/plog/v2/internal/severity"
+	"github.com/pohly/plog/v2/internal/verbosity"
 )
 
 // TL is the relevant subset of testing.TB.
@@ -242,7 +242,7 @@ type tlogger struct {
 }
 
 func (l tlogger) fallbackLogger() logr.Logger {
-	logger := klog.Background().WithValues(l.values...).WithName(l.shared.testName + " leaked goroutine")
+	logger := plog.Background().WithValues(l.values...).WithName(l.shared.testName + " leaked goroutine")
 	if l.prefix != "" {
 		logger = logger.WithName(l.prefix)
 	}

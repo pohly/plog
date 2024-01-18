@@ -1,6 +1,6 @@
 // Package klogr implements github.com/go-logr/logr.Logger in terms of
-// k8s.io/klog.
-package klogr
+// k8s.io/plog.
+package plogr
 
 import (
 	"bytes"
@@ -11,8 +11,8 @@ import (
 
 	"github.com/go-logr/logr"
 
-	"k8s.io/klog/v2"
-	"k8s.io/klog/v2/internal/serialize"
+	"github.com/pohly/plog/v2"
+	"github.com/pohly/plog/v2/internal/serialize"
 )
 
 const (
@@ -28,11 +28,11 @@ type Format string
 
 const (
 	// FormatSerialize tells klogr to turn key/value pairs into text itself
-	// before invoking klog. Key/value pairs are sorted by key.
+	// before invoking plog. Key/value pairs are sorted by key.
 	FormatSerialize Format = "Serialize"
 
 	// FormatKlog tells klogr to pass all text messages and key/value pairs
-	// directly to klog. Klog itself then serializes in a human-readable
+	// directly to plog. Klog itself then serializes in a human-readable
 	// format and optionally passes on to a structure logging backend.
 	FormatKlog Format = "Klog"
 )
@@ -45,7 +45,7 @@ func WithFormat(format Format) Option {
 }
 
 // New returns a logr.Logger which serializes output itself
-// and writes it via klog.
+// and writes it via plog.
 //
 // Deprecated: this uses a custom, out-dated output format. Use textlogger.NewLogger instead.
 func New() logr.Logger {
@@ -53,7 +53,7 @@ func New() logr.Logger {
 }
 
 // NewWithOptions returns a logr.Logger which serializes as determined
-// by the WithFormat option and writes via klog. The default is
+// by the WithFormat option and writes via plog. The default is
 // FormatKlog.
 //
 // Deprecated: FormatSerialize is out-dated. For FormatKlog, use textlogger.NewLogger instead.
@@ -140,15 +140,15 @@ func (l *klogger) Info(level int, msg string, kvList ...interface{}) {
 		msgStr := flatten("msg", msg)
 		merged := serialize.MergeKVs(l.values, kvList)
 		kvStr := flatten(merged...)
-		klog.VDepth(l.callDepth+1, klog.Level(level)).InfoDepth(l.callDepth+1, msgStr, " ", kvStr)
+		plog.VDepth(l.callDepth+1, plog.Level(level)).InfoDepth(l.callDepth+1, msgStr, " ", kvStr)
 	case FormatKlog:
 		merged := serialize.MergeKVs(l.values, kvList)
-		klog.VDepth(l.callDepth+1, klog.Level(level)).InfoSDepth(l.callDepth+1, msg, merged...)
+		plog.VDepth(l.callDepth+1, plog.Level(level)).InfoSDepth(l.callDepth+1, msg, merged...)
 	}
 }
 
 func (l *klogger) Enabled(level int) bool {
-	return klog.VDepth(l.callDepth+1, klog.Level(level)).Enabled()
+	return plog.VDepth(l.callDepth+1, plog.Level(level)).Enabled()
 }
 
 func (l *klogger) Error(err error, msg string, kvList ...interface{}) {
@@ -162,10 +162,10 @@ func (l *klogger) Error(err error, msg string, kvList ...interface{}) {
 		errStr := flatten("error", loggableErr)
 		merged := serialize.MergeKVs(l.values, kvList)
 		kvStr := flatten(merged...)
-		klog.ErrorDepth(l.callDepth+1, msgStr, " ", errStr, " ", kvStr)
+		plog.ErrorDepth(l.callDepth+1, msgStr, " ", errStr, " ", kvStr)
 	case FormatKlog:
 		merged := serialize.MergeKVs(l.values, kvList)
-		klog.ErrorSDepth(l.callDepth+1, err, msg, merged...)
+		plog.ErrorSDepth(l.callDepth+1, err, msg, merged...)
 	}
 }
 

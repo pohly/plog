@@ -14,15 +14,15 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package klog_test
+package plog_test
 
 import (
 	"testing"
 
-	"k8s.io/klog/v2"
+	"github.com/pohly/plog/v2"
 )
 
-func testVerbosity(t *testing.T, logger klog.Logger) {
+func testVerbosity(t *testing.T, logger plog.Logger) {
 	// This runs with -v=5 -vmodule=klog_helper_test=10.
 	logger.V(11).Info("v11 not visible from klogr_helper_test.go")
 	if logger.V(11).Enabled() {

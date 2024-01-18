@@ -17,7 +17,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package klog
+package plog
 
 // SafePtr is a function that takes a pointer of any type (T) as an argument.
 // If the provided pointer is not nil, it returns the same pointer. If it is nil, it returns nil instead.

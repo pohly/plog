@@ -26,7 +26,7 @@ import (
 	"strings"
 	"time"
 
-	"k8s.io/klog/v2/internal/severity"
+	"github.com/pohly/plog/v2/internal/severity"
 )
 
 func Handle(_ context.Context, record slog.Record, groups string, printWithInfos func(file string, line int, now time.Time, err error, s severity.Severity, msg string, kvList []interface{})) error {

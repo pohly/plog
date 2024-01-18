@@ -26,28 +26,28 @@
 //     [LoggerWithValues], [LoggerWithName]); if the ability to turn off
 //     contextual logging is not needed, then go-logr can also be used directly
 //   - type aliases for go-logr types to simplify imports in code which uses both (e.g. [Logger])
-//   - [k8s.io/klog/v2/textlogger]: a logger which uses the same formatting as klog log with
+//   - [github.com/pohly/plog/v2/textlogger]: a logger which uses the same formatting as klog log with
 //     simpler output routing; beware that it comes with its own command line flags
 //     and does not use the ones from klog
-//   - [k8s.io/klog/v2/ktesting]: per-test output in Go unit tests
-//   - [k8s.io/klog/v2/klogr]: a deprecated, standalone [logr.Logger] on top of the main klog package;
-//     use [Background] instead if klog output routing is needed, [k8s.io/klog/v2/textlogger] if not
-//   - [k8s.io/klog/v2/examples]: demos of this functionality
-//   - [k8s.io/klog/v2/test]: reusable tests for [logr.Logger] implementations
+//   - [github.com/pohly/plog/v2/ktesting]: per-test output in Go unit tests
+//   - [github.com/pohly/plog/v2/klogr]: a deprecated, standalone [logr.Logger] on top of the main klog package;
+//     use [Background] instead if klog output routing is needed, [github.com/pohly/plog/v2/textlogger] if not
+//   - [github.com/pohly/plog/v2/examples]: demos of this functionality
+//   - [github.com/pohly/plog/v2/test]: reusable tests for [logr.Logger] implementations
 //
 // Basic examples:
 //
-//	klog.Info("Prepare to repel boarders")
+//	plog.Info("Prepare to repel boarders")
 //
-//	klog.Fatalf("Initialization failed: %s", err)
+//	plog.Fatalf("Initialization failed: %s", err)
 //
 // See the documentation for the V function for an explanation of these examples:
 //
-//	if klog.V(2) {
-//		klog.Info("Starting transaction...")
+//	if plog.V(2) {
+//		plog.Info("Starting transaction...")
 //	}
 //
-//	klog.V(2).Infoln("Processed", nItems, "elements")
+//	plog.V(2).Infoln("Processed", nItems, "elements")
 //
 // Log output is buffered and written periodically using Flush. Programs
 // should call Flush before exiting to guarantee all log output is written.
@@ -88,7 +88,7 @@
 //			"glob" pattern and N is a V level. For instance,
 //				-vmodule=gopher*=3
 //			sets the V level to 3 in all Go files whose names begin "gopher".
-package klog
+package plog
 
 import (
 	"bufio"
@@ -108,11 +108,11 @@ import (
 	"sync/atomic"
 	"time"
 
-	"k8s.io/klog/v2/internal/buffer"
-	"k8s.io/klog/v2/internal/clock"
-	"k8s.io/klog/v2/internal/dbg"
-	"k8s.io/klog/v2/internal/serialize"
-	"k8s.io/klog/v2/internal/severity"
+	"github.com/pohly/plog/v2/internal/buffer"
+	"github.com/pohly/plog/v2/internal/clock"
+	"github.com/pohly/plog/v2/internal/dbg"
+	"github.com/pohly/plog/v2/internal/serialize"
+	"github.com/pohly/plog/v2/internal/severity"
 )
 
 // severityValue identifies the sort of log: info, warning etc. It also implements
@@ -443,7 +443,7 @@ func init() {
 // InitFlags is for explicitly initializing the flags.
 // It may get called repeatedly for different flagsets, but not
 // twice for the same one. May get called concurrently
-// to other goroutines using klog. However, only some flags
+// to other goroutines using plog. However, only some flags
 // may get set concurrently (see implementation).
 func InitFlags(flagset *flag.FlagSet) {
 	if flagset == nil {
@@ -1061,7 +1061,7 @@ func (sb *syncBuffer) Write(p []byte) (n int, err error) {
 }
 
 // rotateFile closes the syncBuffer's file and starts a new one.
-// The startup argument indicates whether this is the initial startup of klog.
+// The startup argument indicates whether this is the initial startup of plog.
 // If startup is true, existing files are opened for appending instead of truncated.
 func (sb *syncBuffer) rotateFile(now time.Time, startup bool) error {
 	if sb.file != nil {
@@ -1269,7 +1269,7 @@ func CopyStandardLogTo(name string) {
 func NewStandardLogger(name string) *stdLog.Logger {
 	sev, ok := severity.ByName(name)
 	if !ok {
-		panic(fmt.Sprintf("klog.NewStandardLogger(%q): unknown severity", name))
+		panic(fmt.Sprintf("plog.NewStandardLogger(%q): unknown severity", name))
 	}
 	return stdLog.New(logBridge(sev), "", stdLog.Lshortfile)
 }
@@ -1348,11 +1348,11 @@ func newVerbose(level Level, b bool) Verbose {
 // and Infof. These methods will write to the Info log if called.
 // Thus, one may write either
 //
-//	if klog.V(2).Enabled() { klog.Info("log this") }
+//	if plog.V(2).Enabled() { plog.Info("log this") }
 //
 // or
 //
-//	klog.V(2).Info("log this")
+//	plog.V(2).Info("log this")
 //
 // The second form is shorter but the first is cheaper if logging is off because it does
 // not evaluate its arguments.
@@ -1536,7 +1536,7 @@ func InfofDepth(depth int, format string, args ...interface{}) {
 // The key/value pairs would be join by "=" ; a newline is always appended.
 //
 // Basic examples:
-// >> klog.InfoS("Pod status updated", "pod", "kubedns", "status", "ready")
+// >> plog.InfoS("Pod status updated", "pod", "kubedns", "status", "ready")
 // output:
 // >> I1025 00:15:15.525108       1 controller_utils.go:116] "Pod status updated" pod="kubedns" status="ready"
 func InfoS(msg string, keysAndValues ...interface{}) {
@@ -1621,7 +1621,7 @@ func ErrorfDepth(depth int, format string, args ...interface{}) {
 // The key/value pairs would be join by "=" ; a newline is always appended.
 //
 // Basic examples:
-// >> klog.ErrorS(err, "Failed to update pod status")
+// >> plog.ErrorS(err, "Failed to update pod status")
 // output:
 // >> E1025 00:15:15.525108       1 controller_utils.go:114] "Failed to update pod status" err="timeout"
 func ErrorS(err error, msg string, keysAndValues ...interface{}) {

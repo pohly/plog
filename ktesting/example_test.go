@@ -21,7 +21,7 @@ import (
 	"fmt"
 	"time"
 
-	"k8s.io/klog/v2/ktesting"
+	"github.com/pohly/plog/v2/ktesting"
 )
 
 func ExampleUnderlier() {

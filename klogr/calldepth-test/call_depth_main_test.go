@@ -12,13 +12,13 @@ import (
 	"strings"
 	"testing"
 
-	"k8s.io/klog/v2"
-	"k8s.io/klog/v2/internal/test/require"
-	"k8s.io/klog/v2/klogr"
+	"github.com/pohly/plog/v2"
+	"github.com/pohly/plog/v2/internal/test/require"
+	"github.com/pohly/plog/v2/klogr"
 )
 
 func TestCallDepth(t *testing.T) {
-	klog.InitFlags(nil)
+	plog.InitFlags(nil)
 	require.NoError(t, flag.CommandLine.Set("v", "10"))
 	require.NoError(t, flag.CommandLine.Set("skip_headers", "false"))
 	require.NoError(t, flag.CommandLine.Set("logtostderr", "false"))
@@ -31,7 +31,7 @@ func TestCallDepth(t *testing.T) {
 
 		// hijack the klog output
 		tmpWriteBuffer := bytes.NewBuffer(nil)
-		klog.SetOutput(tmpWriteBuffer)
+		plog.SetOutput(tmpWriteBuffer)
 
 		validate := func(t *testing.T) {
 			output := tmpWriteBuffer.String()

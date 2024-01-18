@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package klogr_test
+package plogr_test
 
 import (
 	"io"
@@ -22,11 +22,11 @@ import (
 
 	"github.com/go-logr/logr"
 
-	"k8s.io/klog/v2/klogr"
-	"k8s.io/klog/v2/test"
+	"github.com/pohly/plog/v2/klogr"
+	"github.com/pohly/plog/v2/test"
 )
 
-// TestKlogrOutput tests klogr output via klog.
+// TestKlogrOutput tests klogr output via plog.
 func TestKlogrOutput(t *testing.T) {
 	test.InitKlog(t)
 	test.Output(t, test.OutputConfig{

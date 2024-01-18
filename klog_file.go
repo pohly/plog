@@ -16,7 +16,7 @@
 
 // File I/O for logs.
 
-package klog
+package plog
 
 import (
 	"errors"
@@ -88,7 +88,7 @@ var onceLogDirs sync.Once
 // contains tag ("INFO", "FATAL", etc.) and t.  If the file is created
 // successfully, create also attempts to update the symlink for that tag, ignoring
 // errors.
-// The startup argument indicates whether this is the initial startup of klog.
+// The startup argument indicates whether this is the initial startup of plog.
 // If startup is true, existing files are opened for appending instead of truncated.
 func create(tag string, t time.Time, startup bool) (f *os.File, filename string, err error) {
 	if logging.logFile != "" {
@@ -118,7 +118,7 @@ func create(tag string, t time.Time, startup bool) (f *os.File, filename string,
 	return nil, "", fmt.Errorf("log: cannot create log: %v", lastErr)
 }
 
-// The startup argument indicates whether this is the initial startup of klog.
+// The startup argument indicates whether this is the initial startup of plog.
 // If startup is true, existing files are opened for appending instead of truncated.
 func openOrCreate(name string, startup bool) (*os.File, error) {
 	if startup {

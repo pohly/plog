@@ -1,4 +1,4 @@
-package klogr
+package plogr
 
 import (
 	"bytes"
@@ -7,9 +7,9 @@ import (
 	"strings"
 	"testing"
 
-	"k8s.io/klog/v2"
-	"k8s.io/klog/v2/internal/test/require"
-	"k8s.io/klog/v2/test"
+	"github.com/pohly/plog/v2"
+	"github.com/pohly/plog/v2/internal/test/require"
+	"github.com/pohly/plog/v2/test"
 
 	"github.com/go-logr/logr"
 )
@@ -185,7 +185,7 @@ func testOutput(t *testing.T, format string) {
 
 			// hijack the klog output
 			tmpWriteBuffer := bytes.NewBuffer(nil)
-			klog.SetOutput(tmpWriteBuffer)
+			plog.SetOutput(tmpWriteBuffer)
 
 			if test.err != nil {
 				test.klogr.Error(test.err, test.text, test.keysAndValues...)
@@ -194,7 +194,7 @@ func testOutput(t *testing.T, format string) {
 			}
 
 			// call Flush to ensure the text isn't still buffered
-			klog.Flush()
+			plog.Flush()
 
 			actual := tmpWriteBuffer.String()
 			expectedOutput := test.expectedOutput

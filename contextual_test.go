@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package klog_test
+package plog_test
 
 import (
 	"context"
@@ -23,38 +23,38 @@ import (
 	"testing"
 
 	"github.com/go-logr/logr"
-	"k8s.io/klog/v2"
+	"github.com/pohly/plog/v2"
 )
 
 func ExampleSetLogger() {
-	defer klog.ClearLogger()
+	defer plog.ClearLogger()
 
 	// Logger is only used as backend, Background() returns klogr.
-	klog.SetLogger(logr.Discard())
-	fmt.Printf("logger after SetLogger: %T\n", klog.Background().GetSink())
+	plog.SetLogger(logr.Discard())
+	fmt.Printf("logger after SetLogger: %T\n", plog.Background().GetSink())
 
 	// Logger is only used as backend, Background() returns klogr.
-	klog.SetLoggerWithOptions(logr.Discard(), klog.ContextualLogger(false))
-	fmt.Printf("logger after SetLoggerWithOptions with ContextualLogger(false): %T\n", klog.Background().GetSink())
+	plog.SetLoggerWithOptions(logr.Discard(), plog.ContextualLogger(false))
+	fmt.Printf("logger after SetLoggerWithOptions with ContextualLogger(false): %T\n", plog.Background().GetSink())
 
 	// Logger is used as backend and directly.
-	klog.SetLoggerWithOptions(logr.Discard(), klog.ContextualLogger(true))
-	fmt.Printf("logger after SetLoggerWithOptions with ContextualLogger(true): %T\n", klog.Background().GetSink())
+	plog.SetLoggerWithOptions(logr.Discard(), plog.ContextualLogger(true))
+	fmt.Printf("logger after SetLoggerWithOptions with ContextualLogger(true): %T\n", plog.Background().GetSink())
 
 	// Output:
-	// logger after SetLogger: *klog.klogger
-	// logger after SetLoggerWithOptions with ContextualLogger(false): *klog.klogger
+	// logger after SetLogger: *plog.klogger
+	// logger after SetLoggerWithOptions with ContextualLogger(false): *plog.klogger
 	// logger after SetLoggerWithOptions with ContextualLogger(true): <nil>
 }
 
 func ExampleFlushLogger() {
-	defer klog.ClearLogger()
+	defer plog.ClearLogger()
 
 	// This simple logger doesn't need flushing, but others might.
-	klog.SetLoggerWithOptions(logr.Discard(), klog.FlushLogger(func() {
+	plog.SetLoggerWithOptions(logr.Discard(), plog.FlushLogger(func() {
 		fmt.Print("flushing...")
 	}))
-	klog.Flush()
+	plog.Flush()
 
 	// Output:
 	// flushing...
@@ -62,7 +62,7 @@ func ExampleFlushLogger() {
 
 func BenchmarkPassingLogger(b *testing.B) {
 	b.Run("with context", func(b *testing.B) {
-		ctx := klog.NewContext(context.Background(), klog.Background())
+		ctx := plog.NewContext(context.Background(), plog.Background())
 		var finalCtx context.Context
 		for n := b.N; n > 0; n-- {
 			finalCtx = passCtx(ctx)
@@ -71,8 +71,8 @@ func BenchmarkPassingLogger(b *testing.B) {
 	})
 
 	b.Run("without context", func(b *testing.B) {
-		logger := klog.Background()
-		var finalLogger klog.Logger
+		logger := plog.Background()
+		var finalLogger plog.Logger
 		for n := b.N; n > 0; n-- {
 			finalLogger = passLogger(logger)
 		}
@@ -82,8 +82,8 @@ func BenchmarkPassingLogger(b *testing.B) {
 
 func BenchmarkExtractLogger(b *testing.B) {
 	b.Run("from context", func(b *testing.B) {
-		ctx := klog.NewContext(context.Background(), klog.Background())
-		var finalLogger klog.Logger
+		ctx := plog.NewContext(context.Background(), plog.Background())
+		var finalLogger plog.Logger
 		for n := b.N; n > 0; n-- {
 			finalLogger = extractCtx(ctx)
 		}
@@ -95,7 +95,7 @@ func BenchmarkExtractLogger(b *testing.B) {
 func passCtx(ctx context.Context) context.Context { return ctx }
 
 //go:noinline
-func extractCtx(ctx context.Context) klog.Logger { return klog.FromContext(ctx) }
+func extractCtx(ctx context.Context) plog.Logger { return plog.FromContext(ctx) }
 
 //go:noinline
-func passLogger(logger klog.Logger) klog.Logger { return logger }
+func passLogger(logger plog.Logger) plog.Logger { return logger }

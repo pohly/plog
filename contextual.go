@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package klog
+package plog
 
 import (
 	"context"
@@ -25,9 +25,9 @@ import (
 // This file provides the implementation of
 // https://github.com/kubernetes/enhancements/tree/master/keps/sig-instrumentation/1602-structured-logging
 //
-// SetLogger and ClearLogger were originally added to klog.go and got moved
+// SetLogger and ClearLogger were originally added to plog.go and got moved
 // here. Contextual logging adds a way to retrieve a Logger for direct logging
-// without the logging calls in klog.go.
+// without the logging calls in plog.go.
 //
 // The global variables are expected to be modified only during sequential
 // parts of a program (init, serial tests) and therefore are not protected by
@@ -49,7 +49,7 @@ var (
 // Use as:
 //
 //	...
-//	klog.SetLogger(zapr.NewLogger(zapLog))
+//	plog.SetLogger(zapr.NewLogger(zapLog))
 //
 // To remove a backing logr implemention, use ClearLogger. Setting an
 // empty logger with SetLogger(logr.Logger{}) does not work.
@@ -82,7 +82,7 @@ func SetLoggerWithOptions(logger logr.Logger, opts ...LoggerOption) {
 
 // ContextualLogger determines whether the logger passed to
 // SetLoggerWithOptions may also get called directly. Such a logger cannot rely
-// on verbosity checking in klog.
+// on verbosity checking in plog.
 func ContextualLogger(enabled bool) LoggerOption {
 	return func(o *loggerOptions) {
 		o.contextualLogger = enabled

@@ -28,7 +28,7 @@ import (
 	"go.uber.org/zap/zapcore"
 
 	"k8s.io/klog/examples/util/require"
-	"k8s.io/klog/v2"
+	"github.com/pohly/plog/v2"
 )
 
 const (
@@ -38,7 +38,7 @@ const (
 func init() {
 	// klog gets configured so that it writes to a single output file that
 	// will be set during tests with SetOutput.
-	klog.InitFlags(nil)
+	plog.InitFlags(nil)
 	require.NoError(flag.Set("v", fmt.Sprintf("%d", verbosityThreshold)))
 	require.NoError(flag.Set("log_file", "/dev/null"))
 	require.NoError(flag.Set("logtostderr", "false"))
@@ -57,11 +57,11 @@ func BenchmarkOutput(b *testing.B) {
 		init, cleanup func()
 	}{
 		"klog": {
-			init: func() { klog.SetOutput(discard{}) },
+			init: func() { plog.SetOutput(discard{}) },
 		},
 		"zapr": {
-			init:    func() { klog.SetLogger(newZaprLogger()) },
-			cleanup: func() { klog.ClearLogger() },
+			init:    func() { plog.SetLogger(newZaprLogger()) },
+			cleanup: func() { plog.ClearLogger() },
 		},
 	}
 
@@ -76,7 +76,7 @@ func BenchmarkOutput(b *testing.B) {
 		tests = append(tests, testcase{
 			name: fmt.Sprintf("objects/%d", length),
 			generate: func() interface{} {
-				return klog.KObjSlice(arg)
+				return plog.KObjSlice(arg)
 			},
 		})
 	}
@@ -84,40 +84,40 @@ func BenchmarkOutput(b *testing.B) {
 	// Verbosity checks may influence the result.
 	verbosity := map[string]func(value interface{}){
 		"no-verbosity-check": func(value interface{}) {
-			klog.InfoS("test", "key", value)
+			plog.InfoS("test", "key", value)
 		},
 		"pass-verbosity-check": func(value interface{}) {
-			klog.V(verbosityThreshold).InfoS("test", "key", value)
+			plog.V(verbosityThreshold).InfoS("test", "key", value)
 		},
 		"fail-verbosity-check": func(value interface{}) {
-			klog.V(verbosityThreshold+1).InfoS("test", "key", value)
+			plog.V(verbosityThreshold+1).InfoS("test", "key", value)
 		},
 		"non-standard-int-key-check": func(value interface{}) {
-			klog.InfoS("test", 1, value)
+			plog.InfoS("test", 1, value)
 		},
 		"non-standard-struct-key-check": func(value interface{}) {
-			klog.InfoS("test", struct{ key string }{"test"}, value)
+			plog.InfoS("test", struct{ key string }{"test"}, value)
 		},
 		"non-standard-map-key-check": func(value interface{}) {
-			klog.InfoS("test", map[string]bool{"key": true}, value)
+			plog.InfoS("test", map[string]bool{"key": true}, value)
 		},
 		"pass-verbosity-non-standard-int-key-check": func(value interface{}) {
-			klog.V(verbosityThreshold).InfoS("test", 1, value)
+			plog.V(verbosityThreshold).InfoS("test", 1, value)
 		},
 		"pass-verbosity-non-standard-struct-key-check": func(value interface{}) {
-			klog.V(verbosityThreshold).InfoS("test", struct{ key string }{"test"}, value)
+			plog.V(verbosityThreshold).InfoS("test", struct{ key string }{"test"}, value)
 		},
 		"pass-verbosity-non-standard-map-key-check": func(value interface{}) {
-			klog.V(verbosityThreshold).InfoS("test", map[string]bool{"key": true}, value)
+			plog.V(verbosityThreshold).InfoS("test", map[string]bool{"key": true}, value)
 		},
 		"fail-verbosity-non-standard-int-key-check": func(value interface{}) {
-			klog.V(verbosityThreshold+1).InfoS("test", 1, value)
+			plog.V(verbosityThreshold+1).InfoS("test", 1, value)
 		},
 		"fail-verbosity-non-standard-struct-key-check": func(value interface{}) {
-			klog.V(verbosityThreshold+1).InfoS("test", struct{ key string }{"test"}, value)
+			plog.V(verbosityThreshold+1).InfoS("test", struct{ key string }{"test"}, value)
 		},
 		"fail-verbosity-non-standard-map-key-check": func(value interface{}) {
-			klog.V(verbosityThreshold+1).InfoS("test", map[string]bool{"key": true}, value)
+			plog.V(verbosityThreshold+1).InfoS("test", map[string]bool{"key": true}, value)
 		},
 	}
 

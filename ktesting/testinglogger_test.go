@@ -17,9 +17,9 @@ import (
 	"sync"
 	"testing"
 
-	"k8s.io/klog/v2"
-	"k8s.io/klog/v2/internal/test/require"
-	"k8s.io/klog/v2/ktesting"
+	"github.com/pohly/plog/v2"
+	"github.com/pohly/plog/v2/internal/test/require"
+	"github.com/pohly/plog/v2/ktesting"
 )
 
 var headerRe = regexp.MustCompile(`([IE])[[:digit:]]{4} [[:digit:]]{2}:[[:digit:]]{2}:[[:digit:]]{2}\.[[:digit:]]{6}\] `)
@@ -169,18 +169,18 @@ func TestStop(t *testing.T) {
 	// before returning from the test.
 
 	// Capture output for testing.
-	state := klog.CaptureState()
+	state := plog.CaptureState()
 	defer state.Restore()
 	var output bytes.Buffer
 	var fs flag.FlagSet
-	klog.InitFlags(&fs)
+	plog.InitFlags(&fs)
 	require.NoError(t, fs.Set("alsologtostderr", "false"))
 	require.NoError(t, fs.Set("logtostderr", "false"))
 	require.NoError(t, fs.Set("stderrthreshold", "FATAL"))
 	require.NoError(t, fs.Set("one_output", "true"))
-	klog.SetOutput(&output)
+	plog.SetOutput(&output)
 
-	var logger klog.Logger
+	var logger plog.Logger
 	var line int
 	var wg1, wg2 sync.WaitGroup
 	wg1.Add(1)
@@ -218,17 +218,17 @@ func TestStop(t *testing.T) {
 	// Full output:
 	// 	testinglogger_test.go:194] "WARNING: test kept at least one goroutine running after test completion" logger="TestStop/Sub leaked goroutine" callstack=<
 	//        	goroutine 23 [running]:
-	//        	k8s.io/klog/v2/internal/dbg.Stacks(0x0)
+	//        	github.com/pohly/plog/v2/internal/dbg.Stacks(0x0)
 	//        		/nvme/gopath/src/k8s.io/klog/internal/dbg/dbg.go:34 +0x8a
-	//        	k8s.io/klog/v2/ktesting.tlogger.fallbackLogger({0xc0000f2780, {0x0, 0x0}, {0x0, 0x0, 0x0}})
+	//        	github.com/pohly/plog/v2/ktesting.tlogger.fallbackLogger({0xc0000f2780, {0x0, 0x0}, {0x0, 0x0, 0x0}})
 	//        		/nvme/gopath/src/k8s.io/klog/ktesting/testinglogger.go:292 +0x232
-	//        	k8s.io/klog/v2/ktesting.tlogger.Info({0xc0000f2780, {0x0, 0x0}, {0x0, 0x0, 0x0}}, 0x0, {0x5444a5, 0x13}, {0x0, ...})
+	//        	github.com/pohly/plog/v2/ktesting.tlogger.Info({0xc0000f2780, {0x0, 0x0}, {0x0, 0x0, 0x0}}, 0x0, {0x5444a5, 0x13}, {0x0, ...})
 	//        		/nvme/gopath/src/k8s.io/klog/ktesting/testinglogger.go:316 +0x28a
 	//        	github.com/go-logr/logr.Logger.Info({{0x572438?, 0xc0000c0ff0?}, 0x0?}, {0x5444a5, 0x13}, {0x0, 0x0, 0x0})
 	//        		/nvme/gopath/pkg/mod/github.com/go-logr/logr@v1.2.0/logr.go:249 +0xd0
-	//        	k8s.io/klog/v2/ktesting_test.TestStop.func1.1()
+	//        	github.com/pohly/plog/v2/ktesting_test.TestStop.func1.1()
 	//        		/nvme/gopath/src/k8s.io/klog/ktesting/testinglogger_test.go:194 +0xe5
-	//        	created by k8s.io/klog/v2/ktesting_test.TestStop.func1
+	//        	created by github.com/pohly/plog/v2/ktesting_test.TestStop.func1
 	//        		/nvme/gopath/src/k8s.io/klog/ktesting/testinglogger_test.go:185 +0x105
 	//         >
 	actual = regexp.MustCompile(`(?m)^\t.*?\n`).ReplaceAllString(actual, ``)

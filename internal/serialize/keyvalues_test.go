@@ -23,9 +23,9 @@ import (
 	"testing"
 	"time"
 
-	"k8s.io/klog/v2"
-	"k8s.io/klog/v2/internal/serialize"
-	"k8s.io/klog/v2/internal/test"
+	"github.com/pohly/plog/v2"
+	"github.com/pohly/plog/v2/internal/serialize"
+	"github.com/pohly/plog/v2/internal/test"
 )
 
 // point conforms to fmt.Stringer interface as it implements the String() method
@@ -126,35 +126,35 @@ No whitespace.`,
 			want:       ` pod="kubedns" maps={"three":4}`,
 		},
 		{
-			keysValues: []interface{}{"pod", klog.KRef("kube-system", "kubedns"), "status", "ready"},
+			keysValues: []interface{}{"pod", plog.KRef("kube-system", "kubedns"), "status", "ready"},
 			want:       " pod=\"kube-system/kubedns\" status=\"ready\"",
 		},
 		{
-			keysValues: []interface{}{"pod", klog.KRef("", "kubedns"), "status", "ready"},
+			keysValues: []interface{}{"pod", plog.KRef("", "kubedns"), "status", "ready"},
 			want:       " pod=\"kubedns\" status=\"ready\"",
 		},
 		{
-			keysValues: []interface{}{"pod", klog.KObj(test.KMetadataMock{Name: "test-name", NS: "test-ns"}), "status", "ready"},
+			keysValues: []interface{}{"pod", plog.KObj(test.KMetadataMock{Name: "test-name", NS: "test-ns"}), "status", "ready"},
 			want:       " pod=\"test-ns/test-name\" status=\"ready\"",
 		},
 		{
-			keysValues: []interface{}{"pod", klog.KObj(test.KMetadataMock{Name: "test-name", NS: ""}), "status", "ready"},
+			keysValues: []interface{}{"pod", plog.KObj(test.KMetadataMock{Name: "test-name", NS: ""}), "status", "ready"},
 			want:       " pod=\"test-name\" status=\"ready\"",
 		},
 		{
-			keysValues: []interface{}{"pod", klog.KObj(nil), "status", "ready"},
+			keysValues: []interface{}{"pod", plog.KObj(nil), "status", "ready"},
 			want:       " pod=\"\" status=\"ready\"",
 		},
 		{
-			keysValues: []interface{}{"pod", klog.KObj((*test.PtrKMetadataMock)(nil)), "status", "ready"},
+			keysValues: []interface{}{"pod", plog.KObj((*test.PtrKMetadataMock)(nil)), "status", "ready"},
 			want:       " pod=\"\" status=\"ready\"",
 		},
 		{
-			keysValues: []interface{}{"pod", klog.KObj((*test.KMetadataMock)(nil)), "status", "ready"},
+			keysValues: []interface{}{"pod", plog.KObj((*test.KMetadataMock)(nil)), "status", "ready"},
 			want:       " pod=\"\" status=\"ready\"",
 		},
 		{
-			keysValues: []interface{}{"pods", klog.KObjs([]test.KMetadataMock{
+			keysValues: []interface{}{"pods", plog.KObjs([]test.KMetadataMock{
 				{
 					Name: "kube-dns",
 					NS:   "kube-system",
@@ -167,7 +167,7 @@ No whitespace.`,
 		},
 		{
 			keysValues: []interface{}{"point-1", point{100, 200}, "point-2", emptyPoint},
-			want:       " point-1=\"x=100, y=200\" point-2=\"<panic: value method k8s.io/klog/v2/internal/serialize_test.point.String called using nil *point pointer>\"",
+			want:       " point-1=\"x=100, y=200\" point-2=\"<panic: value method github.com/pohly/plog/v2/internal/serialize_test.point.String called using nil *point pointer>\"",
 		},
 		{
 			keysValues: []interface{}{struct{ key string }{key: "k1"}, "value"},

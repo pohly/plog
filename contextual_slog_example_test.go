@@ -17,17 +17,17 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package klog_test
+package plog_test
 
 import (
 	"log/slog"
 	"os"
 
-	"k8s.io/klog/v2"
+	"github.com/pohly/plog/v2"
 )
 
 func ExampleSetSlogLogger() {
-	state := klog.CaptureState()
+	state := plog.CaptureState()
 	defer state.Restore()
 
 	handler := slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
@@ -40,8 +40,8 @@ func ExampleSetSlogLogger() {
 		},
 	})
 	logger := slog.New(handler)
-	klog.SetSlogLogger(logger)
-	klog.Info("hello world")
+	plog.SetSlogLogger(logger)
+	plog.Info("hello world")
 
 	// Output:
 	// level=INFO msg="hello world"

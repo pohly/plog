@@ -22,8 +22,8 @@ import (
 
 	"github.com/go-logr/logr"
 
-	"k8s.io/klog/v2/test"
-	"k8s.io/klog/v2/textlogger"
+	"github.com/pohly/plog/v2/test"
+	"github.com/pohly/plog/v2/textlogger"
 )
 
 // These test cover the textlogger, directly and as backend.

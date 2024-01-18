@@ -24,7 +24,7 @@ import (
 	"sync"
 	"time"
 
-	"k8s.io/klog/v2/internal/severity"
+	"github.com/pohly/plog/v2/internal/severity"
 )
 
 var (

@@ -25,8 +25,8 @@ import (
 
 	"github.com/go-logr/logr"
 
-	"k8s.io/klog/v2/internal/serialize"
-	"k8s.io/klog/v2/internal/sloghandler"
+	"github.com/pohly/plog/v2/internal/serialize"
+	"github.com/pohly/plog/v2/internal/sloghandler"
 )
 
 func (l *tlogger) Handle(ctx context.Context, record slog.Record) error {

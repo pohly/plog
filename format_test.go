@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package klog_test
+package plog_test
 
 import (
 	"encoding/json"
@@ -22,7 +22,7 @@ import (
 	"strings"
 	"testing"
 
-	"k8s.io/klog/v2"
+	"github.com/pohly/plog/v2"
 
 	"github.com/go-logr/logr"
 )
@@ -40,18 +40,18 @@ func TestFormat(t *testing.T) {
   "Kind": "config",
   "RealField": 42
 }
-`, klog.Format(obj).(fmt.Stringer).String(), "Format(config).String()")
+`, plog.Format(obj).(fmt.Stringer).String(), "Format(config).String()")
 	// fmt.Sprintf would call String if it was available.
-	str := fmt.Sprintf("%s", klog.Format(obj).(logr.Marshaler).MarshalLog())
+	str := fmt.Sprintf("%s", plog.Format(obj).(logr.Marshaler).MarshalLog())
 	if strings.Contains(str, "kind is config") {
-		t.Errorf("fmt.Sprintf called TypeMeta.String for klog.Format(obj).MarshalLog():\n%s", str)
+		t.Errorf("fmt.Sprintf called TypeMeta.String for plog.Format(obj).MarshalLog():\n%s", str)
 	}
 
-	structured, err := json.Marshal(klog.Format(obj).(logr.Marshaler).MarshalLog())
+	structured, err := json.Marshal(plog.Format(obj).(logr.Marshaler).MarshalLog())
 	if err != nil {
 		t.Errorf("JSON Marshal: %v", err)
 	} else {
-		assertEqual(t, `{"Kind":"config","RealField":42}`, string(structured), "json.Marshal(klog.Format(obj).MarshalLog())")
+		assertEqual(t, `{"Kind":"config","RealField":42}`, string(structured), "json.Marshal(plog.Format(obj).MarshalLog())")
 	}
 }
 

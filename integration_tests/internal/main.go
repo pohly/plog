@@ -7,7 +7,7 @@ flags to assert on klog behaviour, especially where klog logs its output
 when different combinations of the klog flags are at play.
 
 This file is not intended to be used outside of the integration tests and
-is not supposed to be a (good) example on how to use klog.
+is not supposed to be a (good) example on how to use plog.
 
 */
 
@@ -18,7 +18,7 @@ import (
 	"fmt"
 	"os"
 
-	"k8s.io/klog/v2"
+	"github.com/pohly/plog/v2"
 )
 
 func main() {
@@ -27,13 +27,13 @@ func main() {
 	errorLogLine := getEnvOrDie("KLOG_ERROR_LOG")
 	fatalLogLine := getEnvOrDie("KLOG_FATAL_LOG")
 
-	klog.InitFlags(nil)
+	plog.InitFlags(nil)
 	flag.Parse()
-	klog.Info(infoLogLine)
-	klog.Warning(warningLogLine)
-	klog.Error(errorLogLine)
-	klog.Flush()
-	klog.Fatal(fatalLogLine)
+	plog.Info(infoLogLine)
+	plog.Warning(warningLogLine)
+	plog.Error(errorLogLine)
+	plog.Flush()
+	plog.Fatal(fatalLogLine)
 }
 
 func getEnvOrDie(name string) string {

@@ -7,7 +7,7 @@ implementation.
 
 Because klogr was implemented before klog itself added supported for
 structured logging, the default in klogr is to serialize key/value
-pairs with JSON and log the result as text messages via klog. This
+pairs with JSON and log the result as text messages via plog. This
 does not work well when klog itself forwards output to a structured
 logger.
 

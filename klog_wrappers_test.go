@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package klog
+package plog
 
 // These helper functions must be in a separate source file because the
 // tests in klog_test.go compare the logged source code file name against

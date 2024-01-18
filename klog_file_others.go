@@ -1,7 +1,7 @@
 //go:build !windows
 // +build !windows
 
-package klog
+package plog
 
 import (
 	"os/user"

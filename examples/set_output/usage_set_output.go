@@ -6,19 +6,19 @@ import (
 	"fmt"
 
 	"k8s.io/klog/examples/util/require"
-	"k8s.io/klog/v2"
+	"github.com/pohly/plog/v2"
 )
 
 func main() {
-	klog.InitFlags(nil)
+	plog.InitFlags(nil)
 	require.NoError(flag.Set("logtostderr", "false"))
 	require.NoError(flag.Set("alsologtostderr", "false"))
 	flag.Parse()
 
 	buf := new(bytes.Buffer)
-	klog.SetOutput(buf)
-	klog.Info("nice to meet you")
-	klog.Flush()
+	plog.SetOutput(buf)
+	plog.Info("nice to meet you")
+	plog.Flush()
 
 	fmt.Printf("LOGGED: %s", buf.String())
 }

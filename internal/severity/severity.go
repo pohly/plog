@@ -21,7 +21,7 @@ import (
 )
 
 // severity identifies the sort of log: info, warning etc. The binding to flag.Value
-// is handled in klog.go
+// is handled in plog.go
 type Severity int32 // sync/atomic int32
 
 // These constants identify the log levels in order of increasing severity.

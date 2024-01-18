@@ -19,7 +19,7 @@ package testing
 import (
 	"time"
 
-	"k8s.io/klog/v2/internal/clock"
+	"github.com/pohly/plog/v2/internal/clock"
 )
 
 var (

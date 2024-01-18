@@ -19,7 +19,7 @@ package test
 import (
 	"github.com/go-logr/logr"
 
-	"k8s.io/klog/v2"
+	"github.com/pohly/plog/v2"
 )
 
 func loggerHelper(logger logr.Logger, msg string, kv []interface{}) {
@@ -27,6 +27,6 @@ func loggerHelper(logger logr.Logger, msg string, kv []interface{}) {
 	logger.Info(msg, kv...)
 }
 
-func klogHelper(level klog.Level, msg string, kv []interface{}) {
-	klog.V(level).InfoSDepth(1, msg, kv...)
+func klogHelper(level plog.Level, msg string, kv []interface{}) {
+	plog.V(level).InfoSDepth(1, msg, kv...)
 }

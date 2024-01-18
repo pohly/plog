@@ -14,12 +14,12 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package klog
+package plog
 
 import (
 	"github.com/go-logr/logr"
 
-	"k8s.io/klog/v2/internal/serialize"
+	"github.com/pohly/plog/v2/internal/serialize"
 )
 
 const (
@@ -28,7 +28,7 @@ const (
 )
 
 // NewKlogr returns a logger that is functionally identical to
-// klogr.NewWithOptions(klogr.FormatKlog), i.e. it passes through to klog. The
+// klogr.NewWithOptions(klogr.FormatKlog), i.e. it passes through to plog. The
 // difference is that it uses a simpler implementation.
 func NewKlogr() Logger {
 	return New(&klogger{})

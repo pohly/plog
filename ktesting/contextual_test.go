@@ -11,8 +11,8 @@ import (
 	"context"
 	"testing"
 
-	"k8s.io/klog/v2"
-	"k8s.io/klog/v2/ktesting"
+	"github.com/pohly/plog/v2"
+	"github.com/pohly/plog/v2/ktesting"
 )
 
 func TestContextual(t *testing.T) {
@@ -23,9 +23,9 @@ func TestContextual(t *testing.T) {
 
 	// When contextual logging is disabled, the output goes to klog
 	// instead of the testing logger.
-	state := klog.CaptureState()
+	state := plog.CaptureState()
 	defer state.Restore()
-	klog.EnableContextualLogging(false)
+	plog.EnableContextualLogging(false)
 	doSomething(ctx)
 
 	testingLogger, ok := logger.GetSink().(ktesting.Underlier)
@@ -49,15 +49,15 @@ Ixxx] foo: hello also from me
 }
 
 func doSomething(ctx context.Context) {
-	logger := klog.FromContext(ctx)
+	logger := plog.FromContext(ctx)
 	logger.Info("hello world")
 
 	logger = logger.WithName("foo")
-	ctx = klog.NewContext(ctx, logger)
+	ctx = plog.NewContext(ctx, logger)
 	doSomeMore(ctx)
 }
 
 func doSomeMore(ctx context.Context) {
-	logger := klog.FromContext(ctx)
+	logger := plog.FromContext(ctx)
 	logger.Info("hello also from me")
 }

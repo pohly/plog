@@ -135,8 +135,8 @@ I output.go:<LINE>] "odd WithValues" keyWithoutValue="(MISSING)"
 {"caller":"test/output.go:<LINE>","msg":"both odd","basekey1":"basevar1","v":0,"akey":"avalue"}
 `,
 
-		`I output.go:<LINE>] "marshaler nil" obj="<panic: value method k8s.io/klog/v2.ObjectRef.WriteText called using nil *ObjectRef pointer>"
-`: `{"caller":"test/output.go:<LINE>","msg":"marshaler nil","v":0,"objError":"PANIC=value method k8s.io/klog/v2.ObjectRef.MarshalLog called using nil *ObjectRef pointer"}
+		`I output.go:<LINE>] "marshaler nil" obj="<panic: value method github.com/pohly/plog/v2.ObjectRef.WriteText called using nil *ObjectRef pointer>"
+`: `{"caller":"test/output.go:<LINE>","msg":"marshaler nil","v":0,"objError":"PANIC=value method github.com/pohly/plog/v2.ObjectRef.MarshalLog called using nil *ObjectRef pointer"}
 `,
 
 		// zap replaces a panic for a nil object with <nil>.
@@ -164,52 +164,52 @@ I output.go:<LINE>] "odd WithValues" keyWithoutValue="(MISSING)"
 `: `{"caller":"test/output.go:<LINE>","msg":"marshaler recursion","v":0,"obj":{}}
 `,
 
-		// klog.Info
+		// plog.Info
 		`I output.go:<LINE>] "helloworld\n"
 `: `{"caller":"test/output.go:<LINE>","msg":"helloworld","v":0}
 `,
 
-		// klog.Infoln
+		// plog.Infoln
 		`I output.go:<LINE>] "hello world\n"
 `: `{"caller":"test/output.go:<LINE>","msg":"hello world","v":0}
 `,
 
-		// klog.Error
+		// plog.Error
 		`E output.go:<LINE>] "helloworld\n"
 `: `{"caller":"test/output.go:<LINE>","msg":"helloworld"}
 `,
 
-		// klog.Errorln
+		// plog.Errorln
 		`E output.go:<LINE>] "hello world\n"
 `: `{"caller":"test/output.go:<LINE>","msg":"hello world"}
 `,
 
-		// klog.ErrorS
+		// plog.ErrorS
 		`E output.go:<LINE>] "world" err="hello"
 `: `{"caller":"test/output.go:<LINE>","msg":"world","err":"hello"}
 `,
 
-		// klog.InfoS
+		// plog.InfoS
 		`I output.go:<LINE>] "hello" what="world"
 `: `{"caller":"test/output.go:<LINE>","msg":"hello","v":0,"what":"world"}
 `,
 
-		// klog.V(1).Info
+		// plog.V(1).Info
 		`I output.go:<LINE>] "hellooneworld\n"
 `: `{"caller":"test/output.go:<LINE>","msg":"hellooneworld","v":1}
 `,
 
-		// klog.V(1).Infoln
+		// plog.V(1).Infoln
 		`I output.go:<LINE>] "hello one world\n"
 `: `{"caller":"test/output.go:<LINE>","msg":"hello one world","v":1}
 `,
 
-		// klog.V(1).ErrorS
+		// plog.V(1).ErrorS
 		`E output.go:<LINE>] "one world" err="hello"
 `: `{"caller":"test/output.go:<LINE>","msg":"one world","err":"hello"}
 `,
 
-		// klog.V(1).InfoS
+		// plog.V(1).InfoS
 		`I output.go:<LINE>] "hello" what="one world"
 `: `{"caller":"test/output.go:<LINE>","msg":"hello","v":1,"what":"one world"}
 `,
@@ -247,13 +247,13 @@ I output.go:<LINE>] "odd WithValues" keyWithoutValue="(MISSING)"
 		`I output.go:<LINE>] "structs" s={"Name":"worker","Kind":"pod"}
 `: `{"caller":"test/output.go:<LINE>","msg":"structs","v":0,"s":{"Name":"worker","Kind":"pod"}}
 `,
-		`I output.go:<LINE>] "klog.Format" s=<
+		`I output.go:<LINE>] "plog.Format" s=<
 	{
 	  "Name": "worker",
 	  "Kind": "pod"
 	}
  >
-`: `{"caller":"test/output.go:<LINE>","msg":"klog.Format","v":0,"s":{"Name":"worker","Kind":"pod"}}
+`: `{"caller":"test/output.go:<LINE>","msg":"plog.Format","v":0,"s":{"Name":"worker","Kind":"pod"}}
 `,
 
 		`I output.go:<LINE>] "cycle" list="<internal error: json: unsupported value: encountered a cycle via *test.myList>"
@@ -264,7 +264,7 @@ I output.go:<LINE>] "odd WithValues" keyWithoutValue="(MISSING)"
 
 // ZaprOutputMappingIndirect provides a mapping from klog output to the
 // corresponding zapr output when zapr is called indirectly through
-// klog.
+// plog.
 //
 // This is different from ZaprOutputMappingDirect because:
 //   - WithName gets added to the message by Output.

@@ -17,25 +17,25 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package klog_test
+package plog_test
 
 import (
 	"testing"
 
-	"k8s.io/klog/v2"
+	"github.com/pohly/plog/v2"
 )
 
 func TestSafePtr(t *testing.T) {
 	// Test with nil pointer
 	var stringPtr *string
-	if result := klog.SafePtr(stringPtr); result != nil {
+	if result := plog.SafePtr(stringPtr); result != nil {
 		t.Errorf("Expected nil, got %p", result)
 	}
 
 	// Test with non-nil pointer
 	expected := "foo"
 	stringPtr = &expected
-	if result := klog.SafePtr(stringPtr); result != stringPtr {
+	if result := plog.SafePtr(stringPtr); result != stringPtr {
 		t.Errorf("Expected %v, got %v", stringPtr, result)
 	}
 }

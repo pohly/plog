@@ -21,7 +21,7 @@ import (
 	"fmt"
 	"regexp"
 
-	"k8s.io/klog/v2/textlogger"
+	"github.com/pohly/plog/v2/textlogger"
 )
 
 var headerRe = regexp.MustCompile(`([IE])[[:digit:]]{4} [[:digit:]]{2}:[[:digit:]]{2}:[[:digit:]]{2}\.[[:digit:]]{6}[[:space:]]+[[:digit:]]+ example_test.go:[[:digit:]]+\] `)

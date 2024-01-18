@@ -4,7 +4,7 @@ import (
 	"flag"
 
 	klogv1 "k8s.io/klog"
-	klogv2 "k8s.io/klog/v2"
+	klogv2 "github.com/pohly/plog/v2"
 )
 
 // OutputCallDepth is the stack depth where we can find the origin of this call

@@ -33,8 +33,8 @@ import (
 
 	"github.com/go-logr/logr"
 
-	"k8s.io/klog/v2"
-	"k8s.io/klog/v2/textlogger"
+	"github.com/pohly/plog/v2"
+	"github.com/pohly/plog/v2/textlogger"
 )
 
 // InitKlog must be called in a test to configure klog for testing.
@@ -44,7 +44,7 @@ import (
 // The returned flag set has the klog flags registered. It can
 // be used to make further changes to the klog configuration.
 func InitKlog(tb testing.TB) *flag.FlagSet {
-	state := klog.CaptureState()
+	state := plog.CaptureState()
 	tb.Cleanup(state.Restore)
 
 	expectNoError := func(err error) {
@@ -56,7 +56,7 @@ func InitKlog(tb testing.TB) *flag.FlagSet {
 	// klog gets configured so that it writes to a single output file that
 	// will be set during tests with SetOutput.
 	var fs flag.FlagSet
-	klog.InitFlags(&fs)
+	plog.InitFlags(&fs)
 	expectNoError(fs.Set("v", "10"))
 	expectNoError(fs.Set("log_file", "/dev/null"))
 	expectNoError(fs.Set("logtostderr", "false"))
@@ -90,7 +90,7 @@ type OutputConfig struct {
 	ExpectedOutputMapping map[string]string
 
 	// SupportsVModule indicates that the logger supports the vmodule
-	// parameter. Ignored when logging through klog.
+	// parameter. Ignored when logging through plog.
 	SupportsVModule bool
 }
 
@@ -255,14 +255,14 @@ I output.go:<LINE>] "test" firstKey=1 secondKey=3
 	},
 	"KObj": {
 		text:   "test",
-		values: []interface{}{"pod", klog.KObj(&kmeta{Name: "pod-1", Namespace: "kube-system"})},
+		values: []interface{}{"pod", plog.KObj(&kmeta{Name: "pod-1", Namespace: "kube-system"})},
 		expectedOutput: `I output.go:<LINE>] "test" pod="kube-system/pod-1"
 `,
 	},
 	"KObjs": {
 		text: "KObjs",
 		values: []interface{}{"pods",
-			klog.KObjs([]interface{}{
+			plog.KObjs([]interface{}{
 				&kmeta{Name: "pod-1", Namespace: "kube-system"},
 				&kmeta{Name: "pod-2", Namespace: "kube-system"},
 			})},
@@ -272,7 +272,7 @@ I output.go:<LINE>] "test" firstKey=1 secondKey=3
 	"KObjSlice okay": {
 		text: "KObjSlice",
 		values: []interface{}{"pods",
-			klog.KObjSlice([]interface{}{
+			plog.KObjSlice([]interface{}{
 				&kmeta{Name: "pod-1", Namespace: "kube-system"},
 				&kmeta{Name: "pod-2", Namespace: "kube-system"},
 			})},
@@ -282,21 +282,21 @@ I output.go:<LINE>] "test" firstKey=1 secondKey=3
 	"KObjSlice nil arg": {
 		text: "test",
 		values: []interface{}{"pods",
-			klog.KObjSlice(nil)},
+			plog.KObjSlice(nil)},
 		expectedOutput: `I output.go:<LINE>] "test" pods=null
 `,
 	},
 	"KObjSlice int arg": {
 		text: "test",
 		values: []interface{}{"pods",
-			klog.KObjSlice(1)},
+			plog.KObjSlice(1)},
 		expectedOutput: `I output.go:<LINE>] "test" pods="<KObjSlice needs a slice, got type int>"
 `,
 	},
 	"KObjSlice nil entry": {
 		text: "test",
 		values: []interface{}{"pods",
-			klog.KObjSlice([]interface{}{
+			plog.KObjSlice([]interface{}{
 				&kmeta{Name: "pod-1", Namespace: "kube-system"},
 				nil,
 			})},
@@ -306,7 +306,7 @@ I output.go:<LINE>] "test" firstKey=1 secondKey=3
 	"KObjSlice ints": {
 		text: "test",
 		values: []interface{}{"ints",
-			klog.KObjSlice([]int{1, 2, 3})},
+			plog.KObjSlice([]int{1, 2, 3})},
 		expectedOutput: `I output.go:<LINE>] "test" ints=["<KObjSlice needs a slice of values implementing KMetadata, got type int>"]
 `,
 	},
@@ -342,8 +342,8 @@ I output.go:<LINE>] "test" firstKey=1 secondKey=3
 	},
 	"MarshalLog() for nil": {
 		text:   "marshaler nil",
-		values: []interface{}{"obj", (*klog.ObjectRef)(nil)},
-		expectedOutput: `I output.go:<LINE>] "marshaler nil" obj="<panic: value method k8s.io/klog/v2.ObjectRef.WriteText called using nil *ObjectRef pointer>"
+		values: []interface{}{"obj", (*plog.ObjectRef)(nil)},
+		expectedOutput: `I output.go:<LINE>] "marshaler nil" obj="<panic: value method github.com/pohly/plog/v2.ObjectRef.WriteText called using nil *ObjectRef pointer>"
 `,
 	},
 	"Error() that panics": {
@@ -409,10 +409,10 @@ I output.go:<LINE>] "test" firstKey=1 secondKey=3
 		expectedOutput: `I output.go:<LINE>] "structs" s={"Name":"worker","Kind":"pod"}
 `,
 	},
-	"klog.Format": {
-		text:   "klog.Format",
-		values: []interface{}{"s", klog.Format(struct{ Name, Kind, hidden string }{Name: "worker", Kind: "pod", hidden: "ignore"})},
-		expectedOutput: `I output.go:<LINE>] "klog.Format" s=<
+	"plog.Format": {
+		text:   "plog.Format",
+		values: []interface{}{"s", plog.Format(struct{ Name, Kind, hidden string }{Name: "worker", Kind: "pod", hidden: "ignore"})},
+		expectedOutput: `I output.go:<LINE>] "plog.Format" s=<
 	{
 	  "Name": "worker",
 	  "Kind": "pod"
@@ -463,11 +463,11 @@ func initPrintWithKlog(tb testing.TB, test testcase) {
 		tb.Skip("klog does not support -vmodule properly when using helper functions")
 	}
 
-	state := klog.CaptureState()
+	state := plog.CaptureState()
 	tb.Cleanup(state.Restore)
 
 	var fs flag.FlagSet
-	klog.InitFlags(&fs)
+	plog.InitFlags(&fs)
 	if err := fs.Set("v", "10"); err != nil {
 		tb.Fatalf("unexpected error: %v", err)
 	}
@@ -517,11 +517,11 @@ func printWithKlog(test testcase) {
 		}
 		text := test.text
 		if test.withHelper {
-			klogHelper(klog.Level(test.v), text, kv)
+			klogHelper(plog.Level(test.v), text, kv)
 		} else if test.err != nil {
-			klog.ErrorS(test.err, text, kv...)
+			plog.ErrorS(test.err, text, kv...)
 		} else {
-			klog.V(klog.Level(test.v)).InfoS(text, kv...)
+			plog.V(plog.Level(test.v)).InfoS(text, kv...)
 		}
 	}
 }
@@ -537,7 +537,7 @@ var _, _, printWithKlogLine, _ = runtime.Caller(0) // anchor for finding the lin
 // test will compare against the expected klog output.
 //
 // Loggers will be tested with direct calls to Info or
-// as backend for klog.
+// as backend for plog.
 func Output(t *testing.T, config OutputConfig) {
 	for n, test := range tests {
 		t.Run(n, func(t *testing.T) {
@@ -545,9 +545,9 @@ func Output(t *testing.T, config OutputConfig) {
 
 			testOutput := func(t *testing.T, expectedLine int, print func(buffer *bytes.Buffer)) {
 				var tmpWriteBuffer bytes.Buffer
-				klog.SetOutput(&tmpWriteBuffer)
+				plog.SetOutput(&tmpWriteBuffer)
 				print(&tmpWriteBuffer)
-				klog.Flush()
+				plog.Flush()
 
 				actual := tmpWriteBuffer.String()
 				// Strip varying header.
@@ -583,7 +583,7 @@ func Output(t *testing.T, config OutputConfig) {
 			}
 
 			if config.NewLogger == nil {
-				// Test klog.
+				// Test plog.
 				testOutput(t, printWithKlogLine-1, func(buffer *bytes.Buffer) {
 					printWithKlog(test)
 				})
@@ -609,7 +609,7 @@ func Output(t *testing.T, config OutputConfig) {
 	}
 
 	if config.NewLogger == nil || config.AsBackend {
-		configStruct := klog.Format(myConfig{typeMeta: typeMeta{Kind: "config"}, RealField: 42})
+		configStruct := plog.Format(myConfig{typeMeta: typeMeta{Kind: "config"}, RealField: 42})
 		configStructOutput := `I output.go:<LINE>] "Format" config=<
 	{
 	  "Kind": "config",
@@ -630,162 +630,162 @@ func Output(t *testing.T, config OutputConfig) {
 		}{
 			{
 				name:    "Info",
-				logFunc: func() { klog.Info("hello", "world") },
+				logFunc: func() { plog.Info("hello", "world") },
 				output:  "I output.go:<LINE>] helloworld\n", // This looks odd, but simply is how klog works.
 			},
 			{
 				name:    "InfoDepth",
-				logFunc: func() { klog.InfoDepth(0, "hello", "world") },
+				logFunc: func() { plog.InfoDepth(0, "hello", "world") },
 				output:  "I output.go:<LINE>] helloworld\n",
 			},
 			{
 				name:    "Infoln",
-				logFunc: func() { klog.Infoln("hello", "world") },
+				logFunc: func() { plog.Infoln("hello", "world") },
 				output:  "I output.go:<LINE>] hello world\n",
 			},
 			{
 				name:    "InfolnDepth",
-				logFunc: func() { klog.InfolnDepth(0, "hello", "world") },
+				logFunc: func() { plog.InfolnDepth(0, "hello", "world") },
 				output:  "I output.go:<LINE>] hello world\n",
 			},
 			{
 				name:    "Infof",
-				logFunc: func() { klog.Infof("hello %s", "world") },
+				logFunc: func() { plog.Infof("hello %s", "world") },
 				output:  "I output.go:<LINE>] hello world\n",
 			},
 			{
 				name:    "InfofDepth",
-				logFunc: func() { klog.InfofDepth(0, "hello %s", "world") },
+				logFunc: func() { plog.InfofDepth(0, "hello %s", "world") },
 				output:  "I output.go:<LINE>] hello world\n",
 			},
 			{
 				name:    "InfoS",
-				logFunc: func() { klog.InfoS("hello", "what", "world") },
+				logFunc: func() { plog.InfoS("hello", "what", "world") },
 				output:  "I output.go:<LINE>] \"hello\" what=\"world\"\n",
 			},
 			{
 				name:    "InfoSDepth",
-				logFunc: func() { klog.InfoSDepth(0, "hello", "what", "world") },
+				logFunc: func() { plog.InfoSDepth(0, "hello", "what", "world") },
 				output:  "I output.go:<LINE>] \"hello\" what=\"world\"\n",
 			},
 			{
 				name:    "Warning",
-				logFunc: func() { klog.Warning("hello", "world") },
+				logFunc: func() { plog.Warning("hello", "world") },
 				output:  "W output.go:<LINE>] helloworld\n",
 			},
 			{
 				name:    "WarningDepth",
-				logFunc: func() { klog.WarningDepth(0, "hello", "world") },
+				logFunc: func() { plog.WarningDepth(0, "hello", "world") },
 				output:  "W output.go:<LINE>] helloworld\n",
 			},
 			{
 				name:    "Warningln",
-				logFunc: func() { klog.Warningln("hello", "world") },
+				logFunc: func() { plog.Warningln("hello", "world") },
 				output:  "W output.go:<LINE>] hello world\n",
 			},
 			{
 				name:    "WarninglnDepth",
-				logFunc: func() { klog.WarninglnDepth(0, "hello", "world") },
+				logFunc: func() { plog.WarninglnDepth(0, "hello", "world") },
 				output:  "W output.go:<LINE>] hello world\n",
 			},
 			{
 				name:    "Warningf",
-				logFunc: func() { klog.Warningf("hello %s", "world") },
+				logFunc: func() { plog.Warningf("hello %s", "world") },
 				output:  "W output.go:<LINE>] hello world\n",
 			},
 			{
 				name:    "WarningfDepth",
-				logFunc: func() { klog.WarningfDepth(0, "hello %s", "world") },
+				logFunc: func() { plog.WarningfDepth(0, "hello %s", "world") },
 				output:  "W output.go:<LINE>] hello world\n",
 			},
 			{
 				name:    "Error",
-				logFunc: func() { klog.Error("hello", "world") },
+				logFunc: func() { plog.Error("hello", "world") },
 				output:  "E output.go:<LINE>] helloworld\n",
 			},
 			{
 				name:    "ErrorDepth",
-				logFunc: func() { klog.ErrorDepth(0, "hello", "world") },
+				logFunc: func() { plog.ErrorDepth(0, "hello", "world") },
 				output:  "E output.go:<LINE>] helloworld\n",
 			},
 			{
 				name:    "Errorln",
-				logFunc: func() { klog.Errorln("hello", "world") },
+				logFunc: func() { plog.Errorln("hello", "world") },
 				output:  "E output.go:<LINE>] hello world\n",
 			},
 			{
 				name:    "ErrorlnDepth",
-				logFunc: func() { klog.ErrorlnDepth(0, "hello", "world") },
+				logFunc: func() { plog.ErrorlnDepth(0, "hello", "world") },
 				output:  "E output.go:<LINE>] hello world\n",
 			},
 			{
 				name:    "Errorf",
-				logFunc: func() { klog.Errorf("hello %s", "world") },
+				logFunc: func() { plog.Errorf("hello %s", "world") },
 				output:  "E output.go:<LINE>] hello world\n",
 			},
 			{
 				name:    "ErrorfDepth",
-				logFunc: func() { klog.ErrorfDepth(0, "hello %s", "world") },
+				logFunc: func() { plog.ErrorfDepth(0, "hello %s", "world") },
 				output:  "E output.go:<LINE>] hello world\n",
 			},
 			{
 				name:    "ErrorS",
-				logFunc: func() { klog.ErrorS(errors.New("hello"), "world") },
+				logFunc: func() { plog.ErrorS(errors.New("hello"), "world") },
 				output:  "E output.go:<LINE>] \"world\" err=\"hello\"\n",
 			},
 			{
 				name:    "ErrorSDepth",
-				logFunc: func() { klog.ErrorSDepth(0, errors.New("hello"), "world") },
+				logFunc: func() { plog.ErrorSDepth(0, errors.New("hello"), "world") },
 				output:  "E output.go:<LINE>] \"world\" err=\"hello\"\n",
 			},
 			{
 				name:    "V().Info",
-				logFunc: func() { klog.V(1).Info("hello", "one", "world") },
+				logFunc: func() { plog.V(1).Info("hello", "one", "world") },
 				output:  "I output.go:<LINE>] hellooneworld\n",
 			},
 			{
 				name:    "V().InfoDepth",
-				logFunc: func() { klog.V(1).InfoDepth(0, "hello", "one", "world") },
+				logFunc: func() { plog.V(1).InfoDepth(0, "hello", "one", "world") },
 				output:  "I output.go:<LINE>] hellooneworld\n",
 			},
 			{
 				name:    "V().Infoln",
-				logFunc: func() { klog.V(1).Infoln("hello", "one", "world") },
+				logFunc: func() { plog.V(1).Infoln("hello", "one", "world") },
 				output:  "I output.go:<LINE>] hello one world\n",
 			},
 			{
 				name:    "V().InfolnDepth",
-				logFunc: func() { klog.V(1).InfolnDepth(0, "hello", "one", "world") },
+				logFunc: func() { plog.V(1).InfolnDepth(0, "hello", "one", "world") },
 				output:  "I output.go:<LINE>] hello one world\n",
 			},
 			{
 				name:    "V().Infof",
-				logFunc: func() { klog.V(1).Infof("hello %s %s", "one", "world") },
+				logFunc: func() { plog.V(1).Infof("hello %s %s", "one", "world") },
 				output:  "I output.go:<LINE>] hello one world\n",
 			},
 			{
 				name:    "V().InfofDepth",
-				logFunc: func() { klog.V(1).InfofDepth(0, "hello %s %s", "one", "world") },
+				logFunc: func() { plog.V(1).InfofDepth(0, "hello %s %s", "one", "world") },
 				output:  "I output.go:<LINE>] hello one world\n",
 			},
 			{
 				name:    "V().InfoS",
-				logFunc: func() { klog.V(1).InfoS("hello", "what", "one world") },
+				logFunc: func() { plog.V(1).InfoS("hello", "what", "one world") },
 				output:  "I output.go:<LINE>] \"hello\" what=\"one world\"\n",
 			},
 			{
 				name:    "V().InfoSDepth",
-				logFunc: func() { klog.V(1).InfoSDepth(0, "hello", "what", "one world") },
+				logFunc: func() { plog.V(1).InfoSDepth(0, "hello", "what", "one world") },
 				output:  "I output.go:<LINE>] \"hello\" what=\"one world\"\n",
 			},
 			{
 				name:    "V().ErrorS",
-				logFunc: func() { klog.V(1).ErrorS(errors.New("hello"), "one world") },
+				logFunc: func() { plog.V(1).ErrorS(errors.New("hello"), "one world") },
 				output:  "E output.go:<LINE>] \"one world\" err=\"hello\"\n",
 			},
 			{
 				name:    "Format InfoS",
-				logFunc: func() { klog.InfoS("Format", "config", configStruct) },
+				logFunc: func() { plog.InfoS("Format", "config", configStruct) },
 				output:  configStructOutput,
 			},
 		}
@@ -796,13 +796,13 @@ func Output(t *testing.T, config OutputConfig) {
 				var buffer bytes.Buffer
 				haveWriteKlogBuffer := false
 				if config.NewLogger == nil {
-					klog.SetOutput(&buffer)
+					plog.SetOutput(&buffer)
 				} else {
 					haveWriteKlogBuffer = setLogger(config.NewLogger(&buffer, 10, ""))
-					defer klog.ClearLogger()
+					defer plog.ClearLogger()
 				}
 				test.logFunc()
-				klog.Flush()
+				plog.Flush()
 
 				actual := buffer.String()
 				// Strip varying header.
@@ -857,18 +857,18 @@ func Output(t *testing.T, config OutputConfig) {
 // It can be used for arbitrary logr.Logger implementations.
 //
 // Loggers will be tested with direct calls to Info or
-// as backend for klog.
+// as backend for plog.
 func Benchmark(b *testing.B, config OutputConfig) {
 	for n, test := range tests {
 		b.Run(n, func(b *testing.B) {
-			state := klog.CaptureState()
+			state := plog.CaptureState()
 			defer state.Restore()
-			klog.SetOutput(io.Discard)
+			plog.SetOutput(io.Discard)
 			initPrintWithKlog(b, test)
 			b.ResetTimer()
 
 			if config.NewLogger == nil {
-				// Test klog.
+				// Test plog.
 				for i := 0; i < b.N; i++ {
 					printWithKlog(test)
 				}
@@ -898,12 +898,12 @@ func Benchmark(b *testing.B, config OutputConfig) {
 
 func setLogger(logger logr.Logger) bool {
 	haveWriteKlogBuffer := false
-	var opts []klog.LoggerOption
+	var opts []plog.LoggerOption
 	if writer, ok := logger.GetSink().(textlogger.KlogBufferWriter); ok {
-		opts = append(opts, klog.WriteKlogBuffer(writer.WriteKlogBuffer))
+		opts = append(opts, plog.WriteKlogBuffer(writer.WriteKlogBuffer))
 		haveWriteKlogBuffer = true
 	}
-	klog.SetLoggerWithOptions(logger, opts...)
+	plog.SetLoggerWithOptions(logger, opts...)
 	return haveWriteKlogBuffer
 }
 
@@ -923,7 +923,7 @@ func (k kmeta) GetNamespace() string {
 	return k.Namespace
 }
 
-var _ klog.KMetadata = kmeta{}
+var _ plog.KMetadata = kmeta{}
 
 type customErrorJSON struct {
 	s string

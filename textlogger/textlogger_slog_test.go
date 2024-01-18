@@ -26,8 +26,8 @@ import (
 	"time"
 
 	"github.com/go-logr/logr/slogr"
-	internal "k8s.io/klog/v2/internal/buffer"
-	"k8s.io/klog/v2/textlogger"
+	internal "github.com/pohly/plog/v2/internal/buffer"
+	"github.com/pohly/plog/v2/textlogger"
 )
 
 var _ slog.LogValuer = coordinates{}

@@ -10,10 +10,10 @@ import (
 	"fmt"
 	"testing"
 
-	"k8s.io/klog/v2"
-	"k8s.io/klog/v2/internal/test"
-	"k8s.io/klog/v2/ktesting"
-	_ "k8s.io/klog/v2/ktesting/init" // add command line flags
+	"github.com/pohly/plog/v2"
+	"github.com/pohly/plog/v2/internal/test"
+	"github.com/pohly/plog/v2/ktesting"
+	_ "github.com/pohly/plog/v2/ktesting/init" // add command line flags
 )
 
 func TestKlogr(t *testing.T) {
@@ -41,7 +41,7 @@ func (e err) Error() string {
 
 var _ error = err{}
 
-func exampleOutput(logger klog.Logger) {
+func exampleOutput(logger plog.Logger) {
 	logger.Info("hello world")
 	logger.Error(err{msg: "some error"}, "failed")
 	logger.V(1).Info("verbosity 1")
@@ -52,7 +52,7 @@ func exampleOutput(logger klog.Logger) {
 		"float", 2.0,
 		"pair", pair{a: 1, b: 2},
 		"raw", obj,
-		"kobj", klog.KObj(obj),
+		"kobj", plog.KObj(obj),
 	)
 	logger.V(4).Info("info message level 4")
 	logger.V(5).Info("info message level 5")

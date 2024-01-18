@@ -15,7 +15,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package klog
+package plog
 
 import (
 	"fmt"
@@ -53,7 +53,7 @@ func FlushAndExit(flushTimeout time.Duration, exitCode int) {
 
 // timeoutFlush calls Flush and returns when it completes or after timeout
 // elapses, whichever happens first.  This is needed because the hooks invoked
-// by Flush may deadlock when klog.Fatal is called from a hook that holds
+// by Flush may deadlock when plog.Fatal is called from a hook that holds
 // a lock. Flushing also might take too long.
 func timeoutFlush(timeout time.Duration) {
 	done := make(chan bool, 1)

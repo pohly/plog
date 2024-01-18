@@ -23,7 +23,7 @@ import (
 	"strconv"
 	"time"
 
-	"k8s.io/klog/v2/internal/verbosity"
+	"github.com/pohly/plog/v2/internal/verbosity"
 )
 
 // Config influences logging in a text logger. To make this configurable via
@@ -146,7 +146,7 @@ func NewConfig(opts ...ConfigOption) *Config {
 // AddFlags registers the command line flags that control the configuration.
 //
 // The default flag names are the same as in klog, so unless those defaults
-// are changed, either klog.InitFlags or Config.AddFlags can be used for the
+// are changed, either plog.InitFlags or Config.AddFlags can be used for the
 // same flag set, but not both.
 func (c *Config) AddFlags(fs *flag.FlagSet) {
 	fs.Var(c.Verbosity(), c.co.verbosityFlagName, "number for the log level verbosity of the testing logger")

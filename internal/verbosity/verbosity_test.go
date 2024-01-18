@@ -20,7 +20,7 @@ package verbosity
 import (
 	"testing"
 
-	"k8s.io/klog/v2/internal/test/require"
+	"github.com/pohly/plog/v2/internal/test/require"
 )
 
 func TestV(t *testing.T) {

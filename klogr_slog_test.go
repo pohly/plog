@@ -17,7 +17,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package klog_test
+package plog_test
 
 import (
 	"errors"
@@ -29,8 +29,8 @@ import (
 
 	"github.com/go-logr/logr"
 
-	"k8s.io/klog/v2"
-	internal "k8s.io/klog/v2/internal/buffer"
+	"github.com/pohly/plog/v2"
+	internal "github.com/pohly/plog/v2/internal/buffer"
 )
 
 var _ slog.LogValuer = coordinates{}
@@ -45,10 +45,10 @@ func (c coordinates) LogValue() slog.Value {
 
 func ExampleBackground_Slog() {
 	// Temporarily reconfigure for output to stdout, with -v=4.
-	state := klog.CaptureState()
+	state := plog.CaptureState()
 	defer state.Restore()
 	var fs flag.FlagSet
-	klog.InitFlags(&fs)
+	plog.InitFlags(&fs)
 	if err := fs.Set("logtostderr", "false"); err != nil {
 		fmt.Println(err)
 	}
@@ -64,14 +64,14 @@ func ExampleBackground_Slog() {
 	if err := fs.Set("skip_headers", "false"); err != nil {
 		fmt.Println(err)
 	}
-	klog.SetOutput(os.Stdout)
+	plog.SetOutput(os.Stdout)
 
 	// To get consistent output for each run.
 	ts, _ := time.Parse(time.RFC3339, "2000-12-24T12:30:40Z")
 	internal.Time = &ts
 	internal.Pid = 123
 
-	logrLogger := klog.Background()
+	logrLogger := plog.Background()
 	slogHandler := logr.ToSlogHandler(logrLogger)
 	slogLogger := slog.New(slogHandler)
 

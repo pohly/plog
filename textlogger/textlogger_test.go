@@ -22,9 +22,9 @@ import (
 	"time"
 
 	"github.com/go-logr/logr"
-	"k8s.io/klog/v2"
-	internal "k8s.io/klog/v2/internal/buffer"
-	"k8s.io/klog/v2/textlogger"
+	"github.com/pohly/plog/v2"
+	internal "github.com/pohly/plog/v2/internal/buffer"
+	"github.com/pohly/plog/v2/textlogger"
 )
 
 var _ logr.Marshaler = coordinatesMarshaler{}
@@ -72,7 +72,7 @@ func ExampleNewLogger() {
 	// I1224 12:30:40.000000     123 textlogger_test.go:65] "hello world"
 }
 
-func someHelper(logger klog.Logger, msg string) {
+func someHelper(logger plog.Logger, msg string) {
 	logger.WithCallDepth(1).Info(msg)
 }
 

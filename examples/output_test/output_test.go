@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-// Package output_test shows how to use k8s.io/klog/v2/test
+// Package output_test shows how to use github.com/pohly/plog/v2/test
 // and provides unit testing with dependencies that wouldn't
 // be acceptable for the main module.
 package output_test
@@ -28,10 +28,10 @@ import (
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 
-	"k8s.io/klog/v2"
-	"k8s.io/klog/v2/klogr"
-	"k8s.io/klog/v2/test"
-	"k8s.io/klog/v2/textlogger"
+	"github.com/pohly/plog/v2"
+	"github.com/pohly/plog/v2/klogr"
+	"github.com/pohly/plog/v2/test"
+	"github.com/pohly/plog/v2/textlogger"
 )
 
 // newLogger is a test.OutputConfig.NewLogger callback which creates a zapr
@@ -69,7 +69,7 @@ func TestKlogrStackText(t *testing.T) {
 		if err := config.VModule().Set(vmodule); err != nil {
 			panic(err)
 		}
-		klog.SetLogger(textlogger.NewLogger(config))
+		plog.SetLogger(textlogger.NewLogger(config))
 
 		// Frontend: klogr.
 		return klogr.NewWithOptions(klogr.WithFormat(klogr.FormatKlog))
@@ -114,7 +114,7 @@ func TestKlogrStackZapr(t *testing.T) {
 
 	newLogger := func(out io.Writer, v int, vmodule string) logr.Logger {
 		// Backend: zapr as configured in k8s.io/component-base/logs/json.
-		klog.SetLogger(newZaprLogger(out, v))
+		plog.SetLogger(newZaprLogger(out, v))
 
 		// Frontend: klogr.
 		return klogr.NewWithOptions(klogr.WithFormat(klogr.FormatKlog))
@@ -122,7 +122,7 @@ func TestKlogrStackZapr(t *testing.T) {
 	test.Output(t, test.OutputConfig{NewLogger: newLogger, ExpectedOutputMapping: mapping})
 }
 
-// TestKlogrInternalStackText tests klog.klogr (the simplified version used for contextual logging) -> klog -> text logger.
+// TestKlogrInternalStackText tests plog.klogr (the simplified version used for contextual logging) -> klog -> text logger.
 func TestKlogrInternalStackText(t *testing.T) {
 	test.InitKlog(t)
 	newLogger := func(out io.Writer, v int, vmodule string) logr.Logger {
@@ -134,15 +134,15 @@ func TestKlogrInternalStackText(t *testing.T) {
 		if err := config.VModule().Set(vmodule); err != nil {
 			panic(err)
 		}
-		klog.SetLogger(textlogger.NewLogger(config))
+		plog.SetLogger(textlogger.NewLogger(config))
 
 		// Frontend: internal klogr.
-		return klog.NewKlogr()
+		return plog.NewKlogr()
 	}
 	test.Output(t, test.OutputConfig{NewLogger: newLogger, SupportsVModule: true})
 }
 
-// TestKlogrInternalStackKlogr tests klog.klogr (the simplified version used for contextual logging) -> klog -> zapr.
+// TestKlogrInternalStackKlogr tests plog.klogr (the simplified version used for contextual logging) -> klog -> zapr.
 //
 // This exposes whether verbosity is passed through correctly
 // (https://github.com/kubernetes/klog/issues/294) because klogr logging
@@ -179,10 +179,10 @@ func TestKlogrInternalStackZapr(t *testing.T) {
 
 	newLogger := func(out io.Writer, v int, vmodule string) logr.Logger {
 		// Backend: zapr as configured in k8s.io/component-base/logs/json.
-		klog.SetLogger(newZaprLogger(out, v))
+		plog.SetLogger(newZaprLogger(out, v))
 
 		// Frontend: internal klogr.
-		return klog.NewKlogr()
+		return plog.NewKlogr()
 	}
 	test.Output(t, test.OutputConfig{NewLogger: newLogger, ExpectedOutputMapping: mapping})
 }

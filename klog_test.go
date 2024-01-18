@@ -14,7 +14,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package klog
+package plog
 
 import (
 	"bytes"
@@ -36,11 +36,11 @@ import (
 
 	"github.com/go-logr/logr"
 
-	"k8s.io/klog/v2/internal/buffer"
-	testingclock "k8s.io/klog/v2/internal/clock/testing"
-	"k8s.io/klog/v2/internal/severity"
-	"k8s.io/klog/v2/internal/test"
-	"k8s.io/klog/v2/internal/test/require"
+	"github.com/pohly/plog/v2/internal/buffer"
+	testingclock "github.com/pohly/plog/v2/internal/clock/testing"
+	"github.com/pohly/plog/v2/internal/severity"
+	"github.com/pohly/plog/v2/internal/test"
+	"github.com/pohly/plog/v2/internal/test/require"
 )
 
 // TODO: This test package should be refactored so that tests cannot
@@ -670,7 +670,7 @@ func BenchmarkKObj(b *testing.B) {
 // see examples/benchmarks.
 //
 // This uses two different patterns:
-// - directly calling klog.V(5).Info
+// - directly calling plog.V(5).Info
 // - guarding the call with Enabled
 func BenchmarkKObjs(b *testing.B) {
 	for length := 0; length <= 100; length += 10 {

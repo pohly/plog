@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package klog_test
+package plog_test
 
 import (
 	"bytes"
@@ -22,15 +22,15 @@ import (
 	"regexp"
 	"testing"
 
-	"k8s.io/klog/v2"
+	"github.com/pohly/plog/v2"
 )
 
 func TestVerbosity(t *testing.T) {
-	state := klog.CaptureState()
+	state := plog.CaptureState()
 	defer state.Restore()
 
 	var fs flag.FlagSet
-	klog.InitFlags(&fs)
+	plog.InitFlags(&fs)
 	if err := fs.Set("v", "5"); err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -41,8 +41,8 @@ func TestVerbosity(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 	var buffer bytes.Buffer
-	klog.SetOutput(&buffer)
-	logger := klog.Background()
+	plog.SetOutput(&buffer)
+	logger := plog.Background()
 
 	// -v=5 is in effect here.
 	logger.V(6).Info("v6 not visible from klogr_test.go")
@@ -57,7 +57,7 @@ func TestVerbosity(t *testing.T) {
 	// Now test with -v=5 -vmodule=klogr_helper_test=10.
 	testVerbosity(t, logger)
 
-	klog.Flush()
+	plog.Flush()
 	expected := `^.*v5 visible from klogr_test.go.*
 .*v10 visible from klogr_helper_test.go.*
 `

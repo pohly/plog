@@ -3,7 +3,7 @@ package main
 import (
 	"flag"
 
-	"k8s.io/klog/v2"
+	"github.com/pohly/plog/v2"
 )
 
 // MyStruct will be logged via %+v
@@ -21,7 +21,7 @@ func (m MyString) String() string {
 }
 
 func main() {
-	klog.InitFlags(nil)
+	plog.InitFlags(nil)
 	flag.Parse()
 
 	someData := MyStruct{
@@ -47,29 +47,29 @@ E0000 12:00:01.000000  123456 main.go:43] Failed for some reason
 
 	stringData := MyString(longData)
 
-	klog.Infof("someData printed using InfoF: %v", someData)
-	klog.Infof("longData printed using InfoF: %v", longData)
-	klog.Infof(`stringData printed using InfoF,
+	plog.Infof("someData printed using InfoF: %v", someData)
+	plog.Infof("longData printed using InfoF: %v", longData)
+	plog.Infof(`stringData printed using InfoF,
 with the message across multiple lines:
 %v`, stringData)
-	klog.Infof("logData printed using InfoF:\n%v", logData)
+	plog.Infof("logData printed using InfoF:\n%v", logData)
 
-	klog.Info("=============================================")
+	plog.Info("=============================================")
 
-	klog.InfoS("using InfoS", "someData", someData)
-	klog.InfoS("using InfoS", "longData", longData)
-	klog.InfoS(`using InfoS with
+	plog.InfoS("using InfoS", "someData", someData)
+	plog.InfoS("using InfoS", "longData", longData)
+	plog.InfoS(`using InfoS with
 the message across multiple lines`,
 		"int", 1,
 		"stringData", stringData,
 		"str", "another value")
-	klog.InfoS("using InfoS", "logData", logData)
-	klog.InfoS("using InfoS", "boolean", true, "int", 1, "float", 0.1)
+	plog.InfoS("using InfoS", "logData", logData)
+	plog.InfoS("using InfoS", "boolean", true, "int", 1, "float", 0.1)
 
 	// The Kubernetes recommendation is to start the message with uppercase
 	// and not end with punctuation. See
 	// https://github.com/kubernetes/community/blob/HEAD/contributors/devel/sig-instrumentation/migration-to-structured-logging.md
-	klog.InfoS("Did something", "item", "foobar")
+	plog.InfoS("Did something", "item", "foobar")
 	// Not recommended, but also works.
-	klog.InfoS("This is a full sentence.", "item", "foobar")
+	plog.InfoS("This is a full sentence.", "item", "foobar")
 }
